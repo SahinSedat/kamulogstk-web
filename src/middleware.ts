@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 )
 
-const COOKIE_NAME = 'auth_token'
+const COOKIE_NAME = 'auth-token'
 
 // Public routes that don't require authentication
 const publicRoutes = [
