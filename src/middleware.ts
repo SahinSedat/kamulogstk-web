@@ -17,6 +17,13 @@ const publicRoutes = [
     '/api/auth/login',
     '/api/auth/register',
     '/api/public',
+    // Landing page routes
+    '/about',
+    '/contact',
+    '/blog',
+    '/privacy',
+    '/terms',
+    '/kvkk',
 ]
 
 // Admin-only routes
