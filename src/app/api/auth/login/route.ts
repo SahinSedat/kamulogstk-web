@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         // Set auth cookie
         response.cookies.set('auth-token', token, {
             httpOnly: true,
-            secure: false, // Set to true when HTTPS is enabled
+            secure: true, // HTTPS enabled
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: '/'
