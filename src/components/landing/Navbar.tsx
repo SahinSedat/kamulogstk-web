@@ -17,10 +17,10 @@ export default function Navbar() {
                         <span className="text-xl font-bold text-white">KamulogSTK</span>
                     </div>
                     <div className="hidden md:flex items-center gap-8">
-                        <a href="#features" className="text-slate-300 hover:text-white transition-colors">Özellikler</a>
-                        <a href="#ai" className="text-slate-300 hover:text-white transition-colors">AI Teknolojisi</a>
-                        <a href="#stats" className="text-slate-300 hover:text-white transition-colors">İstatistikler</a>
-                        <a href="#pricing" className="text-slate-300 hover:text-white transition-colors">Fiyatlandırma</a>
+                        <a href="/#features" className="text-slate-300 hover:text-white transition-colors">Özellikler</a>
+                        <a href="/#ai" className="text-slate-300 hover:text-white transition-colors">AI Teknolojisi</a>
+                        <a href="/#stats" className="text-slate-300 hover:text-white transition-colors">İstatistikler</a>
+                        <Link href="/pricing" className="text-slate-300 hover:text-white transition-colors">Fiyatlandırma</Link>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/auth/login">

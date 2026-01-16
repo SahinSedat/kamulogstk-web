@@ -24,6 +24,7 @@ const publicRoutes = [
     '/privacy',
     '/terms',
     '/kvkk',
+    '/pricing',
 ]
 
 // Admin-only routes
