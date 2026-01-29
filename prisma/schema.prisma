@@ -134,11 +134,14 @@ model STK {
   payments        Payment[]
 
   // Zaman Damgaları
-  approvedAt      DateTime?
-  rejectedAt      DateTime?
-  rejectionReason String?   @db.Text
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  rejectionReason  String?           @db.Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  stksectors       STKSector[]
+  competitors      Competitor[]
+  monthlySnapshots MonthlySnapshot[]
 
   @@index([status])
   @@index([type])
@@ -602,4 +605,111 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+}
+
+// ==========================================
+// STK INTELLIGENCE & ANALYTICS
+// ==========================================
+
+// İş Kolları / Sektörler
+model Sector {
+  id          String  @id @default(cuid())
+  name        String  @unique // "Sağlık", "Metal", "Tekstil"
+  code        String  @unique // "HEALTH", "METAL", "TEXTILE"
+  description String?
+
+  // Referans Verileri
+  totalEmployees Int? // Sektördeki toplam çalışan (resmi kaynak)
+  lastUpdated    DateTime?
+  dataSource     String? // "TÜİK 2025", "SGK 2025"
+
+  regionalData SectorRegionalData[]
+  stkSectors   STKSector[]
+  competitors  Competitor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// İl/Bölge Bazlı Sektör Verileri
+model SectorRegionalData {
+  id       String @id @default(cuid())
+  sectorId String
+  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  city           String // İl adı
+  cityCode       String // Plaka kodu (01-81)
+  totalEmployees Int // O ildeki sektör çalışan sayısı
+  dataSource     String? // Veri kaynağı
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sectorId, cityCode])
+  @@index([city])
+}
+
+// STK-Sektör İlişkisi (Bir STK birden fazla sektörde olabilir)
+model STKSector {
+  id       String @id @default(cuid())
+  stkId    String
+  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  sectorId String
+  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  isPrimary Boolean @default(false) // Ana sektör
+
+  @@unique([stkId, sectorId])
+  @@index([stkId])
+  @@index([sectorId])
+}
+
+// Rakip STK Verileri (Anonimleştirilmiş)
+model Competitor {
+  id       String @id @default(cuid())
+  stkId    String
+  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  sectorId String
+  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  name        String // "Rakip Sendika A" (gerçek isim veya takma ad)
+  memberCount Int // Bildirilen üye sayısı
+  city        String? // Güçlü olduğu il
+  dataSource  String? // "Basın Açıklaması", "Yıllık Rapor"
+  reportDate  DateTime? // Verinin tarihi
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([sectorId])
+}
+
+// Aylık İstatistik Snapshot (AI analizi için)
+model MonthlySnapshot {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  year  Int
+  month Int
+
+  // Üyelik Verileri
+  totalMembers    Int // Ay sonu toplam üye
+  newMembers      Int // O ay katılan
+  resignedMembers Int // O ay istifa eden
+  expelledMembers Int // O ay ihraç edilen
+
+  // Finansal Veriler
+  totalDuesCollected Decimal @db.Decimal(12, 2)
+  duesCollectionRate Decimal @db.Decimal(5, 2) // Tahsilat oranı %
+
+  // İl Bazlı Dağılım (JSON)
+  cityDistribution Json? // {"34": 500, "06": 300, ...}
+
+  createdAt DateTime @default(now())
+
+  @@unique([stkId, year, month])
+  @@index([stkId])
+  @@index([year, month])
 }
