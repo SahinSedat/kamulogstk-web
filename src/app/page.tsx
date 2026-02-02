@@ -10,6 +10,7 @@ import {
   Footer
 } from '@/components/landing'
 
+// Webhook auto-deploy test - v1.0
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
