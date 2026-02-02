@@ -118,6 +118,10 @@ model STK {
   logo        String?
   documents   Json? // Belgeler (JSON array)
 
+  // Tüzük Belgesi
+  statuteFile       String? // Tüzük dosya yolu
+  statuteUploadedAt DateTime? // Tüzük yükleme tarihi
+
   // İlişkiler
   managerId String   @unique
   manager   User     @relation("STKManager", fields: [managerId], references: [id])
@@ -209,6 +213,11 @@ model BoardMember {
   @@index([isActive])
 }
 
+enum DecisionStatus {
+  DRAFT // Taslak
+  FINALIZED // Alındı (Kesinleşmiş)
+}
+
 model BoardDecision {
   id    String @id @default(cuid())
   stkId String
@@ -218,11 +227,18 @@ model BoardDecision {
   decisionNumber String // Karar numarası
   decisionDate   DateTime // Karar tarihi
   subject        String // Karar konusu
-  description    String?  @db.Text
+  content        String?        @db.Text // Karar metni
+  description    String?        @db.Text // Ek açıklama
   documentPath   String? // Karar belgesi dosya yolu
+  status         DecisionStatus @default(DRAFT)
 
   // İlişkilendirme
-  relatedMemberId String? // İlgili üyelik başvurusu
+  relatedMemberId String? // İlgili üyelik başvurusu (eski alan, geriye uyumluluk için)
+  relatedMembers  DecisionMember[]
+
+  // İşlem Takibi
+  createdBy String?
+  updatedBy String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,6 +246,31 @@ model BoardDecision {
   @@unique([stkId, decisionNumber])
   @@index([stkId])
   @@index([decisionDate])
+  @@index([status])
+}
+
+// Karar-Üye İlişkisi
+enum DecisionMemberType {
+  MEMBERSHIP_ACCEPT // Üyelik kabulü
+  RESIGNATION_ACCEPT // İstifa kabulü
+  EXPULSION // İhraç
+  OTHER // Diğer
+}
+
+model DecisionMember {
+  id         String             @id @default(cuid())
+  decisionId String
+  decision   BoardDecision      @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type       DecisionMemberType
+  notes      String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([decisionId, memberId])
+  @@index([decisionId])
+  @@index([memberId])
 }
 
 // ==========================================
@@ -286,8 +327,9 @@ model Member {
   marketingConsent Boolean   @default(false)
 
   // İlişkiler
-  application MembershipApplication?
-  payments    Payment[]
+  application      MembershipApplication?
+  payments         Payment[]
+  relatedDecisions DecisionMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
