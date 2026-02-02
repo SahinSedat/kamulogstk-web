@@ -28,7 +28,7 @@ interface STKLayoutProps {
 
 const sidebarItems = [
     {
-        title: 'Dashboard',
+        title: 'Anasayfa',
         href: '/stk/dashboard',
         icon: LayoutDashboard,
     },
