@@ -237,7 +237,7 @@ export default function PredictionsPage() {
 
                         {/* X-axis labels */}
                         <div className="ml-16 flex justify-between text-xs text-slate-500 mt-2">
-                            {[...historicalData.slice(0, 12, 2), ...predictions.slice(0, 6, 2)].map((d, i) => (
+                            {[...historicalData.filter((_, i) => i % 3 === 0), ...predictions.filter((_, i) => i % 2 === 0)].map((d, i) => (
                                 <span key={i}>
                                     {monthNames[('month' in d ? d.month : predictions[i]?.month || 1) - 1]}
                                 </span>
@@ -330,8 +330,8 @@ export default function PredictionsPage() {
                                 <div
                                     key={anomaly.id}
                                     className={`p-4 rounded-xl border ${anomaly.severity === 'high'
-                                            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                                            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                                        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
                                         }`}
                                 >
                                     <div className="flex items-start justify-between">
