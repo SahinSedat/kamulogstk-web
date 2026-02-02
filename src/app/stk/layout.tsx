@@ -18,6 +18,8 @@ import {
     ChevronRight,
     Bell,
     User,
+    FileText,
+    UserMinus,
 } from 'lucide-react'
 
 interface STKLayoutProps {
@@ -31,8 +33,8 @@ const sidebarItems = [
         icon: LayoutDashboard,
     },
     {
-        title: 'Profil',
-        href: '/stk/profile',
+        title: 'Dernek Profili',
+        href: '/stk/association',
         icon: Building2,
     },
     {
@@ -41,9 +43,19 @@ const sidebarItems = [
         icon: Users,
     },
     {
+        title: 'Kararlar',
+        href: '/stk/decisions',
+        icon: FileText,
+    },
+    {
         title: 'Üyeler',
         href: '/stk/members',
         icon: Users,
+    },
+    {
+        title: 'İstifa Yönetimi',
+        href: '/stk/resignations',
+        icon: UserMinus,
     },
     {
         title: 'Başvurular',
