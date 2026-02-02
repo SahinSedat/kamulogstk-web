@@ -27,7 +27,7 @@ interface AdminLayoutProps {
 const sidebarItems = [
     {
         title: 'Dashboard',
-        href: '/admin/dashboard',
+        href: '/admin/anasayfa',
         icon: LayoutDashboard,
     },
     {
@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {/* Logo */}
                 <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200/50 dark:border-slate-800/50">
                     {!collapsed && (
-                        <Link href="/admin/dashboard" className="flex items-center gap-3">
+                        <Link href="/admin/anasayfa" className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <Building2 className="w-6 h-6 text-white" />
                             </div>

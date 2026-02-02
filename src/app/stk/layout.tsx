@@ -100,7 +100,7 @@ export default function STKLayout({ children }: STKLayoutProps) {
                 {/* Logo */}
                 <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200/50 dark:border-slate-800/50">
                     {!collapsed && (
-                        <Link href="/stk/dashboard" className="flex items-center gap-3">
+                        <Link href="/stk/anasayfa" className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <Building2 className="w-6 h-6 text-white" />
                             </div>

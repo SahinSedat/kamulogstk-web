@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import {
   Navbar,
   HeroSection,
@@ -9,6 +10,14 @@ import {
   CTASection,
   Footer
 } from '@/components/landing'
+
+export const metadata: Metadata = {
+  title: 'KamulogSTK - Yapay Zeka Destekli STK Yönetim Platformu',
+  description: 'Sivil toplum kuruluşları için yapay zeka destekli üye takibi, aidat yönetimi ve finansal raporlama. Dernek, vakıf ve sendikalar için profesyonel çözüm.',
+  alternates: {
+    canonical: 'https://kamulogstk.net',
+  },
+}
 
 // Webhook auto-deploy test - v1.0
 export default function HomePage() {

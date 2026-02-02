@@ -25,8 +25,8 @@ export async function POST() {
 export async function GET() {
     try {
         await logout()
-        return NextResponse.redirect(new URL('/auth/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
+        return NextResponse.redirect(new URL('/auth/giris', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
     } catch {
-        return NextResponse.redirect(new URL('/auth/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
+        return NextResponse.redirect(new URL('/auth/giris', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
     }
 }

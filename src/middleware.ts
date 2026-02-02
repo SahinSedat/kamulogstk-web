@@ -11,20 +11,20 @@ const COOKIE_NAME = 'auth-token'
 // Public routes that don't require authentication
 const publicRoutes = [
     '/',
-    '/auth/login',
-    '/auth/register',
-    '/auth/forgot-password',
-    '/api/auth/login',
-    '/api/auth/register',
+    '/auth/giris',
+    '/auth/kayit',
+    '/auth/sifremi-unuttum',
+    '/api/auth/giris',
+    '/api/auth/kayit',
     '/api/public',
     // Landing page routes
-    '/about',
-    '/contact',
-    '/blog',
-    '/privacy',
-    '/terms',
+    '/hakkimizda',
+    '/iletisim',
+    '/haber',
+    '/gizlilik-politikasi',
+    '/kullanim-sartlari',
     '/kvkk',
-    '/pricing',
+    '/fiyatlandirma',
 ]
 
 // Admin-only routes
@@ -79,7 +79,7 @@ export async function middleware(request: NextRequest) {
                 { status: 401 }
             )
         }
-        return NextResponse.redirect(new URL('/auth/login', request.url))
+        return NextResponse.redirect(new URL('/auth/giris', request.url))
     }
 
     try {
@@ -96,7 +96,7 @@ export async function middleware(request: NextRequest) {
                         { status: 403 }
                     )
                 }
-                return NextResponse.redirect(new URL('/auth/login', request.url))
+                return NextResponse.redirect(new URL('/auth/giris', request.url))
             }
         }
 
@@ -109,7 +109,7 @@ export async function middleware(request: NextRequest) {
                         { status: 403 }
                     )
                 }
-                return NextResponse.redirect(new URL('/auth/login', request.url))
+                return NextResponse.redirect(new URL('/auth/giris', request.url))
             }
         }
 
@@ -138,7 +138,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // Clear invalid cookie and redirect to login
-        const response = NextResponse.redirect(new URL('/auth/login', request.url))
+        const response = NextResponse.redirect(new URL('/auth/giris', request.url))
         response.cookies.delete(COOKIE_NAME)
         return response
     }

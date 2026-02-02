@@ -134,7 +134,7 @@ export default function PricingPage() {
                                         ))}
                                     </ul>
 
-                                    <Link href="/auth/register">
+                                    <Link href="/auth/kayit">
                                         <Button
                                             className={`w-full h-12 ${plan.popular
                                                     ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'

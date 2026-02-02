@@ -23,12 +23,12 @@ export default function Navbar() {
                         <Link href="/pricing" className="text-slate-300 hover:text-white transition-colors">Fiyatlandırma</Link>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/auth/login">
+                        <Link href="/auth/giris">
                             <Button variant="ghost" className="text-slate-300 hover:text-white">
                                 Giriş Yap
                             </Button>
                         </Link>
-                        <Link href="/auth/register">
+                        <Link href="/auth/kayit">
                             <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
                                 Başvuru Yap
                             </Button>

@@ -22,7 +22,7 @@ export default function LoginPage() {
         setError('')
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/giris', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
@@ -33,9 +33,9 @@ export default function LoginPage() {
             if (data.success) {
                 // Redirect based on role
                 if (data.user.role === 'ADMIN') {
-                    router.push('/admin/dashboard')
+                    router.push('/admin/anasayfa')
                 } else {
-                    router.push('/stk/dashboard')
+                    router.push('/stk/anasayfa')
                 }
             } else {
                 setError(data.error || 'Giriş başarısız')
@@ -115,7 +115,7 @@ export default function LoginPage() {
                                 <input type="checkbox" className="rounded border-white/20 bg-white/10" />
                                 Beni hatırla
                             </label>
-                            <Link href="/auth/forgot-password" className="text-purple-400 hover:text-purple-300">
+                            <Link href="/auth/sifremi-unuttum" className="text-purple-400 hover:text-purple-300">
                                 Şifremi unuttum
                             </Link>
                         </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                     <div className="mt-6 text-center">
                         <p className="text-slate-400 text-sm">
                             Henüz hesabınız yok mu?{' '}
-                            <Link href="/auth/register" className="text-purple-400 hover:text-purple-300 font-medium">
+                            <Link href="/auth/kayit" className="text-purple-400 hover:text-purple-300 font-medium">
                                 STK Başvurusu Yap
                             </Link>
                         </p>
