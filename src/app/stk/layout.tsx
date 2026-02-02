@@ -29,57 +29,57 @@ interface STKLayoutProps {
 const sidebarItems = [
     {
         title: 'Anasayfa',
-        href: '/stk/dashboard',
+        href: '/stk/anasayfa',
         icon: LayoutDashboard,
     },
     {
         title: 'Dernek Profili',
-        href: '/stk/association',
+        href: '/stk/dernek-profili',
         icon: Building2,
     },
     {
         title: 'Yönetim Kurulu',
-        href: '/stk/board',
+        href: '/stk/yonetim-kurulu',
         icon: Users,
     },
     {
         title: 'Kararlar',
-        href: '/stk/decisions',
+        href: '/stk/kararlar',
         icon: FileText,
     },
     {
         title: 'Üyeler',
-        href: '/stk/members',
+        href: '/stk/uyeler',
         icon: Users,
     },
     {
         title: 'İstifa Yönetimi',
-        href: '/stk/resignations',
+        href: '/stk/istifa-yonetimi',
         icon: UserMinus,
     },
     {
         title: 'Başvurular',
-        href: '/stk/applications',
+        href: '/stk/basvurular',
         icon: UserPlus,
     },
     {
         title: 'Aidat Planları',
-        href: '/stk/dues',
+        href: '/stk/aidat-planlari',
         icon: Wallet,
     },
     {
         title: 'Ödemeler',
-        href: '/stk/payments',
+        href: '/stk/odemeler',
         icon: CreditCard,
     },
     {
         title: 'Muhasebe',
-        href: '/stk/accounting',
+        href: '/stk/muhasebe',
         icon: Calculator,
     },
     {
         title: 'Ayarlar',
-        href: '/stk/settings',
+        href: '/stk/ayarlar',
         icon: Settings,
     },
 ]

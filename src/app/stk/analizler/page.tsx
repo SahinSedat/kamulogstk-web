@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
                                 ))}
                             </ul>
                         </div>
-                        <Link href="/stk/analytics/predictions">
+                        <Link href="/stk/analizler/tahminler">
                             <Button size="sm" variant="outline" className="text-red-600 border-red-300">
                                 Detaylar
                             </Button>
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{anomalies.length}</div>
                         <div className="text-slate-500 text-sm">Aktif Anomali</div>
-                        <Link href="/stk/analytics/predictions" className="text-xs text-amber-600 hover:underline mt-2 inline-block">
+                        <Link href="/stk/analizler/tahminler" className="text-xs text-amber-600 hover:underline mt-2 inline-block">
                             Detayları gör →
                         </Link>
                     </CardContent>
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
                                 <PieChart className="w-5 h-5 text-emerald-500" />
                                 Pazar Payı Dağılımı
                             </span>
-                            <Link href="/stk/analytics/market-share">
+                            <Link href="/stk/analizler/pazar-payi">
                                 <Button variant="ghost" size="sm">
                                     Detay <ChevronRight className="w-4 h-4 ml-1" />
                                 </Button>
@@ -245,7 +245,7 @@ export default function AnalyticsPage() {
                                 <MapPin className="w-5 h-5 text-blue-500" />
                                 Bölgesel Güç Dağılımı
                             </span>
-                            <Link href="/stk/analytics/heatmap">
+                            <Link href="/stk/analizler/bolgesel-harita">
                                 <Button variant="ghost" size="sm">
                                     Harita <ChevronRight className="w-4 h-4 ml-1" />
                                 </Button>
@@ -282,7 +282,7 @@ export default function AnalyticsPage() {
 
             {/* Quick Links */}
             <div className="grid md:grid-cols-4 gap-4">
-                <Link href="/stk/analytics/market-share">
+                <Link href="/stk/analizler/pazar-payi">
                     <Card className="hover:border-emerald-500 transition-colors cursor-pointer group">
                         <CardContent className="p-4 flex items-center gap-4">
                             <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl group-hover:bg-emerald-200 transition-colors">
@@ -296,7 +296,7 @@ export default function AnalyticsPage() {
                     </Card>
                 </Link>
 
-                <Link href="/stk/analytics/predictions">
+                <Link href="/stk/analizler/tahminler">
                     <Card className="hover:border-purple-500 transition-colors cursor-pointer group">
                         <CardContent className="p-4 flex items-center gap-4">
                             <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl group-hover:bg-purple-200 transition-colors">
@@ -310,7 +310,7 @@ export default function AnalyticsPage() {
                     </Card>
                 </Link>
 
-                <Link href="/stk/analytics/heatmap">
+                <Link href="/stk/analizler/bolgesel-harita">
                     <Card className="hover:border-blue-500 transition-colors cursor-pointer group">
                         <CardContent className="p-4 flex items-center gap-4">
                             <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl group-hover:bg-blue-200 transition-colors">
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
                     </Card>
                 </Link>
 
-                <Link href="/stk/analytics/competitors">
+                <Link href="/stk/analizler/rakipler">
                     <Card className="hover:border-amber-500 transition-colors cursor-pointer group">
                         <CardContent className="p-4 flex items-center gap-4">
                             <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl group-hover:bg-amber-200 transition-colors">
