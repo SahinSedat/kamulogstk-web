@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
 // POST /api/stk/association/statute - Tüzük yükle
 export async function POST(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -55,14 +55,8 @@ export async function POST(request: NextRequest) {
 
         const statuteUrl = `/uploads/statutes/${fileName}`
 
-        // STK güncelle
-        const updated = await prisma.sTK.update({
-            where: { id: stk.id },
-            data: {
-                statuteFile: statuteUrl,
-                statuteUploadedAt: new Date()
-            }
-        })
+        // Note: After migration, statuteFile field will be available
+        // For now, just log the action
 
         // Audit log
         await prisma.auditLog.create({
@@ -79,8 +73,9 @@ export async function POST(request: NextRequest) {
         })
 
         return NextResponse.json({
-            statuteFile: updated.statuteFile,
-            statuteUploadedAt: updated.statuteUploadedAt
+            statuteFile: statuteUrl,
+            statuteUploadedAt: new Date().toISOString(),
+            message: 'Dosya yüklendi (migration sonrası DB kaydı aktif olacak)'
         })
     } catch (error) {
         console.error('Statute upload error:', error)

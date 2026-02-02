@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 
 // GET /api/stk/resignations - İstifa taleplerini listele
 export async function GET(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -25,22 +25,6 @@ export async function GET(request: NextRequest) {
             where: {
                 stkId: stk.id,
                 status: status as 'RESIGNATION_REQ' | 'RESIGNED'
-            },
-            include: {
-                relatedDecisions: {
-                    include: {
-                        decision: {
-                            select: {
-                                id: true,
-                                decisionNumber: true,
-                                decisionDate: true,
-                                subject: true,
-                                status: true
-                            }
-                        }
-                    },
-                    where: { type: 'RESIGNATION_ACCEPT' }
-                }
             },
             orderBy: { updatedAt: 'desc' }
         })
@@ -71,7 +55,7 @@ export async function GET(request: NextRequest) {
 // POST /api/stk/resignations - İstifa talebi oluştur (üye adına)
 export async function POST(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }

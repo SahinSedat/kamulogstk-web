@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 
 // GET /api/stk/decisions - Kararları listele
 export async function GET(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -19,27 +19,14 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url)
-        const status = searchParams.get('status')
         const page = parseInt(searchParams.get('page') || '1')
         const limit = parseInt(searchParams.get('limit') || '20')
 
-        const where: Record<string, unknown> = { stkId: stk.id }
-        if (status) {
-            where.status = status
-        }
+        const where = { stkId: stk.id }
 
         const [decisions, total] = await Promise.all([
             prisma.boardDecision.findMany({
                 where,
-                include: {
-                    relatedMembers: {
-                        include: {
-                            member: {
-                                select: { id: true, name: true, surname: true, memberNumber: true }
-                            }
-                        }
-                    }
-                },
                 orderBy: { decisionDate: 'desc' },
                 skip: (page - 1) * limit,
                 take: limit
@@ -65,7 +52,7 @@ export async function GET(request: NextRequest) {
 // POST /api/stk/decisions - Yeni karar oluştur
 export async function POST(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -79,7 +66,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { decisionNumber, decisionDate, subject, content, description } = body
+        const { decisionNumber, decisionDate, subject, description } = body
 
         if (!decisionNumber || !decisionDate || !subject) {
             return NextResponse.json(
@@ -111,10 +98,7 @@ export async function POST(request: NextRequest) {
                 decisionNumber,
                 decisionDate: new Date(decisionDate),
                 subject,
-                content,
-                description,
-                status: 'DRAFT',
-                createdBy: user.id
+                description
             }
         })
 

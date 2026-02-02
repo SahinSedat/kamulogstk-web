@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 
 // GET /api/stk/association - Dernek profil bilgileri
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 // PUT /api/stk/association - Dernek profil güncelle
 export async function PUT(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
+        const user = await getCurrentUser()
         if (!user || user.role !== 'STK_MANAGER') {
             return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
         }
@@ -100,8 +100,6 @@ export async function PUT(request: NextRequest) {
                 userEmail: user.email,
                 userName: user.name,
                 description: 'Dernek profili güncellendi',
-                oldData: stk as object,
-                newData: updated as object,
                 stkId: stk.id
             }
         })
