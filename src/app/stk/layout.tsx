@@ -99,12 +99,12 @@ export default function STKLayout({ children }: STKLayoutProps) {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed left-0 top-0 z-40 h-screen bg-white/80 backdrop-blur-xl border-r border-slate-200/50 shadow-xl transition-all duration-300 dark:bg-slate-900/80 dark:border-slate-800/50",
+                    "fixed left-0 top-0 z-40 h-screen bg-white/80 backdrop-blur-xl border-r border-slate-200/50 shadow-xl transition-all duration-300 dark:bg-slate-900/80 dark:border-slate-800/50 flex flex-col",
                     collapsed ? "w-20" : "w-72"
                 )}
             >
                 {/* Logo */}
-                <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200/50 dark:border-slate-800/50">
+                <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200/50 dark:border-slate-800/50 flex-shrink-0">
                     {!collapsed && (
                         <Link href="/stk/anasayfa" className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -130,8 +130,8 @@ export default function STKLayout({ children }: STKLayoutProps) {
                     </button>
                 </div>
 
-                {/* Navigation */}
-                <nav className="p-4 space-y-2">
+                {/* Navigation - Scrollable */}
+                <nav className="flex-1 overflow-y-auto p-4 space-y-2">
                     {sidebarItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                         return (
@@ -159,8 +159,8 @@ export default function STKLayout({ children }: STKLayoutProps) {
                     })}
                 </nav>
 
-                {/* Logout */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                {/* Logout - Fixed at bottom */}
+                <div className="flex-shrink-0 p-4 border-t border-slate-200/50 dark:border-slate-800/50">
                     <button
                         className={cn(
                             "flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors",
