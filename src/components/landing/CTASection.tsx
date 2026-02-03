@@ -18,13 +18,13 @@ export default function CTASection() {
                         Kredi kartı gerekmez, iptal etmek kolay.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link href="/auth/kayit">
+                        <Link href="/kayit">
                             <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
                                 Hemen Başvurun
                                 <ChevronRight className="w-5 h-5 ml-1" />
                             </Button>
                         </Link>
-                        <Link href="/auth/giris">
+                        <Link href="/giris">
                             <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10">
                                 Mevcut Hesaba Giriş
                             </Button>

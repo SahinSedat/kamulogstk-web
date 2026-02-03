@@ -61,7 +61,7 @@ export default function RegisterPage() {
         // Simulated API call
         setTimeout(() => {
             setLoading(false)
-            router.push('/auth/giris?registered=true')
+            router.push('/giris?registered=true')
         }, 2000)
     }
 
@@ -391,7 +391,7 @@ export default function RegisterPage() {
                             <div className="mt-6 text-center">
                                 <p className="text-slate-400 text-sm">
                                     Zaten hesabınız var mı?{' '}
-                                    <Link href="/auth/giris" className="text-emerald-400 hover:underline">
+                                    <Link href="/giris" className="text-emerald-400 hover:underline">
                                         Giriş Yapın
                                     </Link>
                                 </p>

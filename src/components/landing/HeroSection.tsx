@@ -44,7 +44,7 @@ export default function HeroSection() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                    <Link href="/auth/kayit">
+                    <Link href="/kayit">
                         <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/30">
                             Ücretsiz Deneyin
                             <ArrowRight className="w-5 h-5 ml-2" />

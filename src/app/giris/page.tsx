@@ -115,7 +115,7 @@ export default function LoginPage() {
                                 <input type="checkbox" className="rounded border-white/20 bg-white/10" />
                                 Beni hatırla
                             </label>
-                            <Link href="/auth/sifremi-unuttum" className="text-purple-400 hover:text-purple-300">
+                            <Link href="/sifremi-unuttum" className="text-purple-400 hover:text-purple-300">
                                 Şifremi unuttum
                             </Link>
                         </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                     <div className="mt-6 text-center">
                         <p className="text-slate-400 text-sm">
                             Henüz hesabınız yok mu?{' '}
-                            <Link href="/auth/kayit" className="text-purple-400 hover:text-purple-300 font-medium">
+                            <Link href="/kayit" className="text-purple-400 hover:text-purple-300 font-medium">
                                 STK Başvurusu Yap
                             </Link>
                         </p>

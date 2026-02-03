@@ -64,12 +64,12 @@ export default function Navbar() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/auth/giris">
+                        <Link href="/giris">
                             <Button variant="ghost" className="text-slate-300 hover:text-white">
                                 Giriş Yap
                             </Button>
                         </Link>
-                        <Link href="/auth/kayit">
+                        <Link href="/kayit">
                             <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
                                 Başvuru Yap
                             </Button>

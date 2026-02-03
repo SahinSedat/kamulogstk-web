@@ -11,14 +11,14 @@ const COOKIE_NAME = 'auth-token'
 // Public routes that don't require authentication
 const publicRoutes = [
     '/',
-    '/auth/giris',
-    '/auth/kayit',
-    '/auth/sifremi-unuttum',
+    '/giris',
+    '/kayit',
+    '/sifremi-unuttum',
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
-    '/api/auth/giris',
-    '/api/auth/kayit',
+    '/api/giris',
+    '/api/kayit',
     // Landing page routes
     '/hakkimizda',
     '/iletisim',
@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
                 { status: 401 }
             )
         }
-        return NextResponse.redirect(new URL('/auth/giris', request.url))
+        return NextResponse.redirect(new URL('/giris', request.url))
     }
 
     try {
@@ -98,7 +98,7 @@ export async function middleware(request: NextRequest) {
                         { status: 403 }
                     )
                 }
-                return NextResponse.redirect(new URL('/auth/giris', request.url))
+                return NextResponse.redirect(new URL('/giris', request.url))
             }
         }
 
@@ -111,7 +111,7 @@ export async function middleware(request: NextRequest) {
                         { status: 403 }
                     )
                 }
-                return NextResponse.redirect(new URL('/auth/giris', request.url))
+                return NextResponse.redirect(new URL('/giris', request.url))
             }
         }
 
@@ -140,7 +140,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // Clear invalid cookie and redirect to login
-        const response = NextResponse.redirect(new URL('/auth/giris', request.url))
+        const response = NextResponse.redirect(new URL('/giris', request.url))
         response.cookies.delete(COOKIE_NAME)
         return response
     }
