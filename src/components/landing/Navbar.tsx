@@ -20,7 +20,7 @@ export default function Navbar() {
                         <a href="/#features" className="text-slate-300 hover:text-white transition-colors">Özellikler</a>
                         <a href="/#ai" className="text-slate-300 hover:text-white transition-colors">AI Teknolojisi</a>
                         <a href="/#stats" className="text-slate-300 hover:text-white transition-colors">İstatistikler</a>
-                        <Link href="/pricing" className="text-slate-300 hover:text-white transition-colors">Fiyatlandırma</Link>
+                        <Link href="/fiyatlandirma" className="text-slate-300 hover:text-white transition-colors">Fiyatlandırma</Link>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/auth/giris">
