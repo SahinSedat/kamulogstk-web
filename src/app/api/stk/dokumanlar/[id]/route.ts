@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'STK ID bulunamadı' }, { status: 400 })
         }
 
-        const doc = await prisma.stkDocument.findFirst({
+        const doc = await prisma.document.findFirst({
             where: { id, stkId },
             include: {
                 createdBy: { select: { name: true } }
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Yetkilendirme gerekli' }, { status: 401 })
         }
 
-        const doc = await prisma.stkDocument.findFirst({
+        const doc = await prisma.document.findFirst({
             where: { id, stkId }
         })
 
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         if (action === 'publish') {
             // Dokümanı yayınla ve bildirim gönder
-            const updatedDoc = await prisma.stkDocument.update({
+            const updatedDoc = await prisma.document.update({
                 where: { id },
                 data: {
                     isPublished: true,
@@ -103,7 +103,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         // Normal güncelleme
-        const updatedDoc = await prisma.stkDocument.update({
+        const updatedDoc = await prisma.document.update({
             where: { id },
             data: {
                 ...(title && { title }),
@@ -130,7 +130,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Yetkilendirme gerekli' }, { status: 401 })
         }
 
-        const doc = await prisma.stkDocument.findFirst({
+        const doc = await prisma.document.findFirst({
             where: { id, stkId }
         })
 
@@ -138,7 +138,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Doküman bulunamadı' }, { status: 404 })
         }
 
-        await prisma.stkDocument.delete({ where: { id } })
+        await prisma.document.delete({ where: { id } })
 
         // Audit log
         await prisma.auditLog.create({

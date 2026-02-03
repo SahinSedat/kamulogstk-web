@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'STK ID bulunamadı' }, { status: 400 })
         }
 
-        const documents = await prisma.stkDocument.findMany({
+        const documents = await prisma.document.findMany({
             where: { stkId },
             orderBy: { createdAt: 'desc' },
             include: {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
         const fileUrl = `/uploads/documents/${stkId}/${fileName}`
 
-        const document = await prisma.stkDocument.create({
+        const document = await prisma.document.create({
             data: {
                 stkId,
                 title,
@@ -132,7 +132,7 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Doküman ID gerekli' }, { status: 400 })
         }
 
-        const document = await prisma.stkDocument.findFirst({
+        const document = await prisma.document.findFirst({
             where: { id: documentId, stkId }
         })
 
@@ -148,7 +148,7 @@ export async function DELETE(request: NextRequest) {
             // Dosya zaten silinmiş olabilir
         }
 
-        await prisma.stkDocument.delete({ where: { id: documentId } })
+        await prisma.document.delete({ where: { id: documentId } })
 
         // Audit log
         await prisma.auditLog.create({
