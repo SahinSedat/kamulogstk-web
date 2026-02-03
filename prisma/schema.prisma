@@ -43,9 +43,10 @@ model User {
   auditLogs     AuditLog[]
   notifications Notification[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastLoginAt DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  lastLoginAt      DateTime?
+  messageCampaigns MessageCampaign[]
 
   @@index([email])
   @@index([role])
@@ -138,14 +139,16 @@ model STK {
   payments        Payment[]
 
   // Zaman Damgaları
-  approvedAt       DateTime?
-  rejectedAt       DateTime?
-  rejectionReason  String?           @db.Text
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  stksectors       STKSector[]
-  competitors      Competitor[]
-  monthlySnapshots MonthlySnapshot[]
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  rejectionReason     String?              @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  stksectors          STKSector[]
+  competitors         Competitor[]
+  monthlySnapshots    MonthlySnapshot[]
+  messageCampaigns    MessageCampaign[]
+  memberNotifications MemberNotification[]
 
   @@index([status])
   @@index([type])
@@ -754,4 +757,120 @@ model MonthlySnapshot {
   @@unique([stkId, year, month])
   @@index([stkId])
   @@index([year, month])
+}
+
+// ==========================================
+// MESAJLAŞMA VE BİLDİRİM SİSTEMİ
+// ==========================================
+
+enum MessageType {
+  SMS
+  PUSH
+  EMAIL
+}
+
+enum MessageStatus {
+  DRAFT // Taslak
+  SCHEDULED // Zamanlanmış
+  SENDING // Gönderiliyor
+  SENT // Gönderildi
+  FAILED // Başarısız
+  CANCELLED // İptal edildi
+}
+
+enum TargetAudience {
+  ALL_ACTIVE // Tüm aktif üyeler
+  DUES_PAID // Aidatı ödenmiş
+  DUES_UNPAID // Aidatı ödenmemiş
+  CUSTOM // Özel seçim
+}
+
+model MessageCampaign {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Mesaj Bilgileri
+  title       String // Kampanya adı (iç kullanım)
+  messageType MessageType
+  subject     String? // Push/Email için başlık
+  content     String      @db.Text // Mesaj içeriği
+
+  // Hedef Kitle
+  targetAudience TargetAudience @default(ALL_ACTIVE)
+  targetFilters  Json? // Özel filtreler
+
+  // Gönderim
+  status         MessageStatus @default(DRAFT)
+  scheduledAt    DateTime? // Zamanlanmış gönderim
+  sentAt         DateTime? // Gönderim zamanı
+  recipientCount Int           @default(0)
+  deliveredCount Int           @default(0)
+  failedCount    Int           @default(0)
+
+  // Yönetici Bilgileri
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  // Admin Kontrolü
+  isBlocked     Boolean   @default(false)
+  blockedReason String?
+  blockedAt     DateTime?
+  blockedById   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // İlişkiler
+  recipients MessageRecipient[]
+
+  @@index([stkId])
+  @@index([status])
+  @@index([messageType])
+}
+
+model MessageRecipient {
+  id         String          @id @default(cuid())
+  campaignId String
+  campaign   MessageCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  memberId   String
+  phone      String? // SMS için
+  email      String? // Email için
+
+  // Gönderim Durumu
+  status       String    @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([memberId])
+}
+
+model MemberNotification {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Bildirim Bilgileri
+  title String
+  body  String @db.Text
+  type  String @default("INFO") // INFO, WARNING, DUES, ANNOUNCEMENT
+  data  Json? // Ekstra veri (link, action vb.)
+
+  // Hedef
+  memberId String? // Tek üye için
+  isGlobal Boolean @default(false) // Tüm üyeler için
+
+  // Durum
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([stkId])
+  @@index([memberId])
+  @@index([isRead])
 }

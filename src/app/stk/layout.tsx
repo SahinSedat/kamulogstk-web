@@ -20,6 +20,7 @@ import {
     User,
     FileText,
     UserMinus,
+    MessageSquare,
 } from 'lucide-react'
 
 interface STKLayoutProps {
@@ -76,6 +77,11 @@ const sidebarItems = [
         title: 'Muhasebe',
         href: '/stk/muhasebe',
         icon: Calculator,
+    },
+    {
+        title: 'Mesajlar',
+        href: '/stk/mesajlar',
+        icon: MessageSquare,
     },
     {
         title: 'Ayarlar',
