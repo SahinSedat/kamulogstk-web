@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
                             surname: true,
                             email: true,
                             phone: true,
-                            tcNumber: true,
+                            tcKimlik: true,
                             memberNumber: true
                         }
                     }
@@ -76,10 +76,10 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { stkId, name, surname, email, phone, tcNumber, birthDate, address } = body
+        const { stkId, name, surname, email, phone, tcKimlik, birthDate, address } = body
 
         // Validate required fields
-        if (!stkId || !name || !surname || !email || !tcNumber) {
+        if (!stkId || !name || !surname || !email || !tcKimlik) {
             return NextResponse.json({ error: 'Zorunlu alanlar eksik' }, { status: 400 })
         }
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
         // Check if member already exists with this TC
         const existingMember = await prisma.member.findFirst({
-            where: { stkId, tcNumber }
+            where: { stkId, tcKimlik }
         })
         if (existingMember) {
             return NextResponse.json({ error: 'Bu TC numarası ile kayıtlı üye mevcut' }, { status: 400 })
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
                 surname,
                 email,
                 phone,
-                tcNumber,
+                tcKimlik,
                 birthDate: birthDate ? new Date(birthDate) : null,
                 address,
                 status: 'APPLIED',
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         // Log
         await prisma.auditLog.create({
             data: {
-                action: 'MEMBERSHIP_APPLICATION',
+                action: 'MEMBER_CREATE',
                 entityType: 'MembershipApplication',
                 entityId: application.id,
                 userId: user.id,

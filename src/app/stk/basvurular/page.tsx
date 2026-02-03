@@ -21,7 +21,7 @@ interface Member {
     surname: string
     email: string
     phone: string
-    tcNumber: string
+    tcKimlik: string
     memberNumber: string
 }
 
@@ -143,7 +143,7 @@ export default function BasvurularPage() {
             app.member.name.toLowerCase().includes(searchLower) ||
             app.member.surname.toLowerCase().includes(searchLower) ||
             app.member.email.toLowerCase().includes(searchLower) ||
-            app.member.tcNumber.includes(searchTerm)
+            app.member.tcKimlik.includes(searchTerm)
         )
     })
 
@@ -267,7 +267,7 @@ export default function BasvurularPage() {
                                             <div className="text-sm text-gray-500">{app.member.phone}</div>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">
-                                            {app.member.tcNumber}
+                                            {app.member.tcKimlik}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {new Date(app.applicationDate).toLocaleDateString('tr-TR')}
@@ -335,7 +335,7 @@ export default function BasvurularPage() {
                                     <div><span className="text-gray-500">Ad Soyad:</span></div>
                                     <div className="font-medium">{selectedApp.member.name} {selectedApp.member.surname}</div>
                                     <div><span className="text-gray-500">TC Kimlik:</span></div>
-                                    <div className="font-medium">{selectedApp.member.tcNumber}</div>
+                                    <div className="font-medium">{selectedApp.member.tcKimlik}</div>
                                     <div><span className="text-gray-500">E-posta:</span></div>
                                     <div className="font-medium">{selectedApp.member.email}</div>
                                     <div><span className="text-gray-500">Telefon:</span></div>
@@ -436,8 +436,8 @@ export default function BasvurularPage() {
                                     onClick={handleAction}
                                     disabled={processing}
                                     className={`px-4 py-2 rounded-lg text-white flex items-center gap-2 ${actionType === 'approve'
-                                            ? 'bg-green-600 hover:bg-green-700'
-                                            : 'bg-red-600 hover:bg-red-700'
+                                        ? 'bg-green-600 hover:bg-green-700'
+                                        : 'bg-red-600 hover:bg-red-700'
                                         } disabled:opacity-50`}
                                 >
                                     {processing && <Loader2 className="w-4 h-4 animate-spin" />}
