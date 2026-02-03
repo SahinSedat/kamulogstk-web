@@ -93,8 +93,8 @@ export default function DokumanlarPage() {
                 alert('Sadece PDF dosyası yükleyebilirsiniz')
                 return
             }
-            if (file.size > 10 * 1024 * 1024) {
-                alert('Dosya boyutu maksimum 10MB olabilir')
+            if (file.size > 1000 * 1024 * 1024) {
+                alert('Dosya boyutu maksimum 1GB olabilir')
                 return
             }
             setUploadForm({ ...uploadForm, file })

@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Maksimum 10MB
-        if (file.size > 10 * 1024 * 1024) {
-            return NextResponse.json({ error: 'Dosya boyutu maksimum 10MB olabilir' }, { status: 400 })
+        if (file.size > 1000 * 1024 * 1024) {
+            return NextResponse.json({ error: 'Dosya boyutu maksimum 1GB olabilir' }, { status: 400 })
         }
 
         // Dosyayı kaydet
