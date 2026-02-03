@@ -43,7 +43,7 @@ const sidebarItems = [
     },
     {
         title: 'Paket Planları',
-        href: '/admin/packages',
+        href: '/admin/paketler',
         icon: Package,
     },
     {
