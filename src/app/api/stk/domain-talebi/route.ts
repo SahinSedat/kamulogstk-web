@@ -10,23 +10,6 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'STK ID bulunamadı' }, { status: 400 })
         }
 
-        // STK'nın aktif paketi var mı kontrol et
-        const stk = await prisma.sTK.findUnique({
-            where: { id: stkId },
-            select: {
-                id: true,
-                packageId: true,
-                package: { select: { name: true, status: true } }
-            }
-        })
-
-        if (!stk?.packageId) {
-            return NextResponse.json({
-                error: 'Bu modülü kullanabilmek için aktif bir üyelik paketi gereklidir',
-                code: 'NO_PACKAGE'
-            }, { status: 403 })
-        }
-
         const requests = await prisma.domainRequest.findMany({
             where: { stkId },
             orderBy: { createdAt: 'desc' }
