@@ -18,6 +18,7 @@ import {
     Bell,
     Search,
     User,
+    Globe,
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -49,6 +50,11 @@ const sidebarItems = [
         title: 'Sistem Logları',
         href: '/admin/logs',
         icon: ScrollText,
+    },
+    {
+        title: 'Domain Talepleri',
+        href: '/admin/domain-talepleri',
+        icon: Globe,
     },
     {
         title: 'Roller & Yetkiler',
