@@ -96,14 +96,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 where: { id: application.memberId },
                 data: {
                     status: 'ACTIVE',
-                    membershipStartDate: new Date()
+                    joinDate: new Date()
                 }
             })
 
             // Log
             await prisma.auditLog.create({
                 data: {
-                    action: 'MEMBERSHIP_APPROVED',
+                    action: 'MEMBER_APPROVE',
                     entityType: 'MembershipApplication',
                     entityId: id,
                     userId: user.id,
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             await prisma.membershipApplication.update({
                 where: { id },
                 data: {
-                    status: 'REJECTED',
+                    status: 'EXPELLED',
                     rejectionReason,
                     reviewedBy: user.id,
                     reviewDate: new Date(),
@@ -141,13 +141,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             // Update member status
             await prisma.member.update({
                 where: { id: application.memberId },
-                data: { status: 'REJECTED' }
+                data: { status: 'EXPELLED' }
             })
 
             // Log
             await prisma.auditLog.create({
                 data: {
-                    action: 'MEMBERSHIP_REJECTED',
+                    action: 'MEMBER_REJECT',
                     entityType: 'MembershipApplication',
                     entityId: id,
                     userId: user.id,
