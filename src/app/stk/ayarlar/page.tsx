@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Settings, Bell, Lock, CreditCard, Globe,
     Moon, Sun, Save, CheckCircle2, Mail, Smartphone
@@ -18,6 +18,36 @@ export default function STKSettingsPage() {
     })
 
     const [saved, setSaved] = useState(false)
+    const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+    // Tema yükle
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+        if (savedTheme) {
+            setTheme(savedTheme)
+            applyTheme(savedTheme)
+        } else {
+            // Sistem tercihini kontrol et
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+            const defaultTheme = prefersDark ? 'dark' : 'light'
+            setTheme(defaultTheme)
+            applyTheme(defaultTheme)
+        }
+    }, [])
+
+    const applyTheme = (newTheme: 'light' | 'dark') => {
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    }
+
+    const handleThemeChange = (newTheme: 'light' | 'dark') => {
+        setTheme(newTheme)
+        localStorage.setItem('theme', newTheme)
+        applyTheme(newTheme)
+    }
 
     const handleSave = () => {
         setSaved(true)
@@ -51,21 +81,21 @@ export default function STKSettingsPage() {
                 {/* Main Settings */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Notifications */}
-                    <Card>
+                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Bell className="w-5 h-5" />
                                 Bildirim Ayarları
                             </CardTitle>
                             <CardDescription>Hangi bildirimleri almak istediğinizi seçin</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     <Mail className="w-5 h-5 text-slate-400" />
                                     <div>
                                         <div className="font-medium text-slate-900 dark:text-white">E-posta Bildirimleri</div>
-                                        <div className="text-sm text-slate-500">Önemli güncellemeleri e-posta ile alın</div>
+                                        <div className="text-sm text-slate-500 dark:text-slate-400">Önemli güncellemeleri e-posta ile alın</div>
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -79,12 +109,12 @@ export default function STKSettingsPage() {
                                 </label>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     <Smartphone className="w-5 h-5 text-slate-400" />
                                     <div>
                                         <div className="font-medium text-slate-900 dark:text-white">SMS Bildirimleri</div>
-                                        <div className="text-sm text-slate-500">Acil durumları SMS ile alın</div>
+                                        <div className="text-sm text-slate-500 dark:text-slate-400">Acil durumları SMS ile alın</div>
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -98,7 +128,7 @@ export default function STKSettingsPage() {
                                 </label>
                             </div>
 
-                            <div className="border-t dark:border-slate-700 pt-4">
+                            <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
                                 <h4 className="font-medium text-slate-900 dark:text-white mb-4">Bildirim Türleri</h4>
                                 <div className="space-y-3">
                                     {[
@@ -122,35 +152,35 @@ export default function STKSettingsPage() {
                     </Card>
 
                     {/* Security */}
-                    <Card>
+                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Lock className="w-5 h-5" />
                                 Güvenlik
                             </CardTitle>
                             <CardDescription>Hesap güvenlik ayarlarınızı yönetin</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div>
                                     <div className="font-medium text-slate-900 dark:text-white">Şifre Değiştir</div>
-                                    <div className="text-sm text-slate-500">Son değişiklik: 30 gün önce</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">Son değişiklik: 30 gün önce</div>
                                 </div>
                                 <Button variant="outline">Değiştir</Button>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div>
                                     <div className="font-medium text-slate-900 dark:text-white">İki Faktörlü Doğrulama</div>
-                                    <div className="text-sm text-slate-500">Ek güvenlik katmanı ekleyin</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">Ek güvenlik katmanı ekleyin</div>
                                 </div>
                                 <Button variant="outline">Etkinleştir</Button>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div>
                                     <div className="font-medium text-slate-900 dark:text-white">Oturum Geçmişi</div>
-                                    <div className="text-sm text-slate-500">Aktif oturumları görüntüleyin</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">Aktif oturumları görüntüleyin</div>
                                 </div>
                                 <Button variant="outline">Görüntüle</Button>
                             </div>
@@ -158,32 +188,32 @@ export default function STKSettingsPage() {
                     </Card>
 
                     {/* Payment */}
-                    <Card>
+                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                                 <CreditCard className="w-5 h-5" />
                                 Ödeme Ayarları
                             </CardTitle>
                             <CardDescription>Fatura ve ödeme bilgilerinizi yönetin</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-400 rounded flex items-center justify-center text-white text-xs font-bold">
                                         VISA
                                     </div>
                                     <div>
                                         <div className="font-medium text-slate-900 dark:text-white">•••• •••• •••• 4242</div>
-                                        <div className="text-sm text-slate-500">Son kullanma: 12/28</div>
+                                        <div className="text-sm text-slate-500 dark:text-slate-400">Son kullanma: 12/28</div>
                                     </div>
                                 </div>
                                 <Button variant="outline">Güncelle</Button>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div>
                                     <div className="font-medium text-slate-900 dark:text-white">Fatura Adresi</div>
-                                    <div className="text-sm text-slate-500">İstanbul, Türkiye</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">İstanbul, Türkiye</div>
                                 </div>
                                 <Button variant="outline">Düzenle</Button>
                             </div>
@@ -194,37 +224,52 @@ export default function STKSettingsPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Appearance */}
-                    <Card>
+                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Sun className="w-5 h-5" />
                                 Görünüm
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
-                                <button className="p-4 bg-white border-2 border-emerald-500 rounded-lg text-center">
-                                    <Sun className="w-6 h-6 mx-auto mb-2 text-amber-500" />
-                                    <span className="text-sm font-medium">Açık</span>
+                                <button
+                                    onClick={() => handleThemeChange('light')}
+                                    className={`p-4 rounded-lg text-center transition-all ${theme === 'light'
+                                            ? 'bg-white border-2 border-emerald-500 shadow-lg'
+                                            : 'bg-slate-100 dark:bg-slate-700 border-2 border-transparent hover:border-slate-300'
+                                        }`}
+                                >
+                                    <Sun className={`w-6 h-6 mx-auto mb-2 ${theme === 'light' ? 'text-amber-500' : 'text-slate-400'}`} />
+                                    <span className={`text-sm font-medium ${theme === 'light' ? 'text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}>Açık</span>
                                 </button>
-                                <button className="p-4 bg-slate-800 border-2 border-transparent rounded-lg text-center">
-                                    <Moon className="w-6 h-6 mx-auto mb-2 text-slate-400" />
-                                    <span className="text-sm font-medium text-white">Koyu</span>
+                                <button
+                                    onClick={() => handleThemeChange('dark')}
+                                    className={`p-4 rounded-lg text-center transition-all ${theme === 'dark'
+                                            ? 'bg-slate-800 border-2 border-emerald-500 shadow-lg'
+                                            : 'bg-slate-100 dark:bg-slate-700 border-2 border-transparent hover:border-slate-300'
+                                        }`}
+                                >
+                                    <Moon className={`w-6 h-6 mx-auto mb-2 ${theme === 'dark' ? 'text-blue-400' : 'text-slate-400'}`} />
+                                    <span className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>Koyu</span>
                                 </button>
                             </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                                Tema tercihiniz bu tarayıcıya kaydedilir
+                            </p>
                         </CardContent>
                     </Card>
 
                     {/* Language */}
-                    <Card>
+                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Globe className="w-5 h-5" />
                                 Dil
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <select className="w-full px-4 py-2 border rounded-lg dark:bg-slate-800 dark:border-slate-700">
+                            <select className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                                 <option value="tr">🇹🇷 Türkçe</option>
                                 <option value="en">🇬🇧 English</option>
                             </select>
@@ -232,15 +277,15 @@ export default function STKSettingsPage() {
                     </Card>
 
                     {/* Danger Zone */}
-                    <Card className="border-red-200 dark:border-red-900">
+                    <Card className="bg-white dark:bg-slate-800 border-red-200 dark:border-red-900/50">
                         <CardHeader>
                             <CardTitle className="text-red-600">Tehlikeli Bölge</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50">
+                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20">
                                 Hesabı Dondur
                             </Button>
-                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50">
+                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20">
                                 Hesabı Sil
                             </Button>
                         </CardContent>
@@ -250,3 +295,4 @@ export default function STKSettingsPage() {
         </div>
     )
 }
+
