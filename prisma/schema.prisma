@@ -47,6 +47,7 @@ model User {
   updatedAt        DateTime          @updatedAt
   lastLoginAt      DateTime?
   messageCampaigns MessageCampaign[]
+  documents        Document[]
 
   @@index([email])
   @@index([role])
@@ -149,6 +150,8 @@ model STK {
   monthlySnapshots    MonthlySnapshot[]
   messageCampaigns    MessageCampaign[]
   memberNotifications MemberNotification[]
+  domainRequests      DomainRequest[]
+  stkDocuments        Document[]
 
   @@index([status])
   @@index([type])
@@ -589,6 +592,16 @@ enum AuditAction {
   PACKAGE_CREATE
   PACKAGE_UPDATE
   SETTINGS_UPDATE
+
+  // Doküman İşlemleri
+  DOCUMENT_CREATE
+  DOCUMENT_UPDATE
+  DOCUMENT_DELETE
+  DOCUMENT_PUBLISH
+
+  // Domain İşlemleri
+  DOMAIN_REQUEST_CREATE
+  DOMAIN_REQUEST_UPDATE
 }
 
 model AuditLog {
@@ -873,4 +886,80 @@ model MemberNotification {
   @@index([stkId])
   @@index([memberId])
   @@index([isRead])
+}
+
+// ==========================================
+// DOMAIN & WEB SİTE TALEP SİSTEMİ
+// ==========================================
+
+enum DomainStatus {
+  PENDING // Beklemede
+  PROCESSING // İşlemde
+  COMPLETED // Tamamlandı
+  CANCELLED // İptal
+}
+
+model DomainRequest {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Talep Bilgileri
+  domain       String // İstenen domain
+  wantsWebsite Boolean @default(true) // Web sitesi de istiyor mu
+  notes        String? @db.Text // STK notu
+
+  // Durum
+  status      DomainStatus @default(PENDING)
+  adminNotes  String?      @db.Text // Admin notu
+  processedAt DateTime? // İşlem tarihi
+  processedBy String? // İşlemi yapan admin
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([status])
+}
+
+// ==========================================
+// DOKÜMAN PAYLAŞIM SİSTEMİ
+// ==========================================
+
+enum DocumentType {
+  ANNOUNCEMENT // Duyuru
+  DOCUMENT // Evrak
+  INFORMATION // Bilgilendirme
+}
+
+model Document {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Doküman Bilgileri
+  title       String
+  description String?      @db.Text
+  type        DocumentType @default(ANNOUNCEMENT)
+
+  // Dosya Bilgileri
+  fileUrl  String
+  fileName String
+  fileSize Int // Byte cinsinden
+  mimeType String @default("application/pdf")
+
+  // Yayın
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
+  // Oluşturan
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([type])
+  @@index([isPublished])
 }

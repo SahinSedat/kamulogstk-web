@@ -21,6 +21,8 @@ import {
     FileText,
     UserMinus,
     MessageSquare,
+    FolderOpen,
+    Globe,
 } from 'lucide-react'
 
 interface STKLayoutProps {
@@ -82,6 +84,16 @@ const sidebarItems = [
         title: 'Mesajlar',
         href: '/stk/mesajlar',
         icon: MessageSquare,
+    },
+    {
+        title: 'Dokümanlar',
+        href: '/stk/dokumanlar',
+        icon: FolderOpen,
+    },
+    {
+        title: 'Domain Talebi',
+        href: '/stk/domain-talebi',
+        icon: Globe,
     },
     {
         title: 'Ayarlar',
