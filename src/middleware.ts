@@ -14,9 +14,11 @@ const publicRoutes = [
     '/auth/giris',
     '/auth/kayit',
     '/auth/sifremi-unuttum',
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/logout',
     '/api/auth/giris',
     '/api/auth/kayit',
-    '/api/public',
     // Landing page routes
     '/hakkimizda',
     '/iletisim',
