@@ -152,6 +152,11 @@ model STK {
   memberNotifications MemberNotification[]
   domainRequests      DomainRequest[]
   stkDocuments        Document[]
+  duesDiscounts       DuesDiscount[]
+  generalAssemblies   GeneralAssembly[]
+  documentTemplates   DocumentTemplate[]
+  stkroles            STKRole[]
+  archives            Archive[]
 
   @@index([status])
   @@index([type])
@@ -283,6 +288,24 @@ model DecisionMember {
 // ÜYELİK YÖNETİMİ
 // ==========================================
 
+// Üye Kategorileri
+enum MemberCategory {
+  ASIL // Asıl üye
+  FAHRI // Fahri üye
+  ONURSAL // Onursal üye
+  KURUMSAL // Kurumsal üye
+  GENCLIK // Gençlik üyesi
+}
+
+// Üye Kayıt Kaynağı
+enum RegistrationSource {
+  ONLINE // Online başvuru
+  FORM // Fiziksel form
+  REFERENCE // Referans ile
+  TRANSFER // Nakil
+  FOUNDING // Kurucu üye
+}
+
 enum MemberStatus {
   APPLIED // Başvurdu
   PENDING // Beklemede (YK kararı bekleniyor)
@@ -321,11 +344,21 @@ model Member {
   education  String?
 
   // Üyelik Bilgileri
-  status         MemberStatus @default(APPLIED)
-  membershipType String? // Asıl, Fahri, Onursal vb.
+  status         MemberStatus   @default(APPLIED)
+  category       MemberCategory @default(ASIL)
+  membershipType String? // Eski alan (geriye uyumluluk)
   joinDate       DateTime? // Üyelik başlangıç tarihi
   leaveDate      DateTime? // Ayrılış tarihi
-  leaveReason    String?      @db.Text
+  leaveReason    String?        @db.Text
+
+  // Üye Kayıt Kaynağı
+  registrationSource RegistrationSource @default(ONLINE)
+  referredBy         String? // Referans veren kişi
+
+  // Islak İmza Durumu
+  wetSignatureStatus Boolean   @default(false)
+  wetSignatureDate   DateTime?
+  wetSignatureNote   String?
 
   // KVKK
   kvkkConsent      Boolean   @default(false)
@@ -336,6 +369,7 @@ model Member {
   application      MembershipApplication?
   payments         Payment[]
   relatedDecisions DecisionMember[]
+  notes            MemberNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -344,6 +378,7 @@ model Member {
   @@unique([stkId, email])
   @@index([stkId])
   @@index([status])
+  @@index([category])
   @@index([name, surname])
 }
 
@@ -377,6 +412,25 @@ model MembershipApplication {
 
   @@index([stkId])
   @@index([status])
+}
+
+// ==========================================
+// ÜYE NOTLARI (Sadece Yönetim Görür)
+// ==========================================
+
+model MemberNote {
+  id       String @id @default(cuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  content   String  @db.Text
+  createdBy String // Notu oluşturan yönetici
+  isPrivate Boolean @default(true) // Gizli not mu?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
 }
 
 // ==========================================
@@ -452,6 +506,45 @@ model DuesPlan {
 
   @@index([stkId])
   @@index([isActive])
+}
+
+// ==========================================
+// AİDAT AFFI VE İNDİRİM
+// ==========================================
+
+enum DiscountType {
+  FORGIVENESS // Aidat affı (tam silme)
+  DISCOUNT // Yüzde veya miktar indirimi
+  DEFERMENT // Erteleme
+}
+
+model DuesDiscount {
+  id       String @id @default(cuid())
+  stkId    String
+  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  memberId String
+
+  discountType    DiscountType
+  originalAmount  Decimal      @db.Decimal(10, 2)
+  discountAmount  Decimal      @db.Decimal(10, 2)
+  discountPercent Int? // Yüzde indirim ise
+
+  reason         String    @db.Text
+  decisionNumber String? // YK karar numarası
+  decisionDate   DateTime?
+  approvedBy     String
+
+  validFrom  DateTime
+  validUntil DateTime? // Erteleme için bitiş tarihi
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([memberId])
+  @@index([discountType])
 }
 
 // ==========================================
@@ -962,4 +1055,212 @@ model Document {
   @@index([stkId])
   @@index([type])
   @@index([isPublished])
+}
+
+// ==========================================
+// GENEL KURUL YÖNETİMİ
+// ==========================================
+
+enum AssemblyType {
+  OLAGAN // Olağan genel kurul
+  OLAGANUSTU // Olağanüstü genel kurul
+}
+
+enum AssemblyStatus {
+  PLANNED // Planlandı
+  IN_PROGRESS // Devam ediyor
+  COMPLETED // Tamamlandı
+  CANCELLED // İptal edildi
+}
+
+enum AttendanceType {
+  IN_PERSON // Şahsen
+  BY_PROXY // Vekaletle
+}
+
+model GeneralAssembly {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Genel Kurul Bilgileri
+  assemblyType   AssemblyType
+  assemblyNumber Int // Kaçıncı genel kurul
+  assemblyDate   DateTime
+  location       String
+
+  // Katılım Bilgileri
+  quorumRequired Int // Toplantı yeter sayısı
+  attendeeCount  Int? // Katılımcı sayısı
+  proxyCount     Int? // Vekaletle katılım sayısı
+
+  // Tutanak
+  minutesContent String? @db.Text
+  minutesPdf     String? // PDF dosya yolu
+
+  // Durum
+  status AssemblyStatus @default(PLANNED)
+
+  // İlişkiler
+  agendaItems AssemblyAgendaItem[]
+  attendees   AssemblyAttendee[]
+  proxies     AssemblyProxy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stkId, assemblyNumber])
+  @@index([stkId])
+  @@index([assemblyDate])
+  @@index([status])
+}
+
+model AssemblyAgendaItem {
+  id         String          @id @default(cuid())
+  assemblyId String
+  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+
+  orderNumber Int // Gündem sırası
+  title       String
+  description String? @db.Text
+  decision    String? @db.Text // Alınan karar
+
+  createdAt DateTime @default(now())
+
+  @@index([assemblyId])
+}
+
+model AssemblyAttendee {
+  id         String          @id @default(cuid())
+  assemblyId String
+  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  memberId   String
+
+  attendType  AttendanceType @default(IN_PERSON)
+  checkinTime DateTime?
+  signature   Boolean        @default(false) // İmza attı mı
+
+  createdAt DateTime @default(now())
+
+  @@unique([assemblyId, memberId])
+  @@index([assemblyId])
+  @@index([memberId])
+}
+
+model AssemblyProxy {
+  id         String          @id @default(cuid())
+  assemblyId String
+  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+
+  giverId    String // Vekalet veren üye ID
+  receiverId String // Vekalet alan üye ID
+  proxyDoc   String? // Vekaletname dosyası
+
+  isApproved Boolean   @default(false)
+  approvedBy String?
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([assemblyId, giverId])
+  @@index([assemblyId])
+  @@index([giverId])
+  @@index([receiverId])
+}
+
+// ==========================================
+// BELGE ŞABLONLARI
+// ==========================================
+
+enum TemplateCategory {
+  UYEBELGESI // Üyelik belgesi
+  AIDAT_MAKBUZU // Aidat makbuzu
+  IHTAR // İhtar yazısı
+  GENEL_YAZI // Genel yazı
+  DAVET // Davet
+  VEKALETNAME // Vekaletname
+  TUTANAK // Tutanak
+}
+
+model DocumentTemplate {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  name      String
+  category  TemplateCategory
+  content   String           @db.Text // HTML/Markdown şablon
+  variables Json? // Kullanılabilir değişkenler: {uye_adi, tarih, vb.}
+
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([category])
+  @@index([isActive])
+}
+
+// ==========================================
+// YÖNETİCİ ROL VE YETKİLERİ
+// ==========================================
+
+model STKRole {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  name        String // Başkan, Muhasip, Sekreter vb.
+  description String?
+  level       Int     @default(1) // Yetki seviyesi (1-10)
+
+  // İzinler JSON formatında
+  // Örnek: ["MEMBER_VIEW", "MEMBER_EDIT", "PAYMENT_CREATE", "DECISION_APPROVE"]
+  permissions Json @default("[]")
+
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stkId, name])
+  @@index([stkId])
+}
+
+// ==========================================
+// YIL BAZLI ARŞİVLEME
+// ==========================================
+
+enum RecordType {
+  MEMBER // Üye kaydı
+  PAYMENT // Ödeme kaydı
+  DECISION // Karar kaydı
+  ASSEMBLY // Genel kurul
+  DOCUMENT // Belge
+}
+
+model Archive {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  year       Int
+  recordType RecordType
+  recordId   String // Orijinal kayıt ID'si
+  snapshot   Json // Kayıt anlık görüntüsü
+
+  isLocked   Boolean   @default(false)
+  lockedAt   DateTime?
+  lockedBy   String?
+  lockReason String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([stkId, recordType, recordId])
+  @@index([stkId])
+  @@index([year])
+  @@index([recordType])
+  @@index([isLocked])
 }
