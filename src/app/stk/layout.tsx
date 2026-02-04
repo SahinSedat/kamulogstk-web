@@ -23,6 +23,7 @@ import {
     MessageSquare,
     FolderOpen,
     Globe,
+    Gavel,
 } from 'lucide-react'
 
 interface STKLayoutProps {
@@ -49,6 +50,11 @@ const sidebarItems = [
         title: 'Kararlar',
         href: '/stk/kararlar',
         icon: FileText,
+    },
+    {
+        title: 'Genel Kurul',
+        href: '/stk/genel-kurul',
+        icon: Gavel,
     },
     {
         title: 'Üyeler',
