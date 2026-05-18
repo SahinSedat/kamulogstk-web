@@ -15,8 +15,15 @@ datasource db {
 // ==========================================
 
 enum UserRole {
+  USER           // Eski DB'deki mevcut değer
+  CONSULTANT     // Eski DB'deki mevcut değer
+  MODERATOR      // Eski DB'deki mevcut değer
   ADMIN
   STK_MANAGER
+  BRANCH_MANAGER // Şube yöneticisi
+  CITIZEN
+
+  @@map("Role") // DB'deki enum adı
 }
 
 enum UserStatus {
@@ -30,12 +37,41 @@ model User {
   id            String     @id @default(cuid())
   email         String     @unique
   password      String
-  name          String
+  name          String?
   phone         String?
   role          UserRole   @default(STK_MANAGER)
   status        UserStatus @default(PENDING)
   emailVerified DateTime?
   avatar        String?
+
+  // Profil Bilgileri
+  address       String?
+  city          String?
+  district      String?
+  occupation    String?
+  workplace     String?
+  education     String?
+  preferredCity String? // Tercih edilen şehir (STK keşfet için)
+
+  // Bildirim Tercihleri
+  notifSms    Boolean @default(true) // SMS bildirimleri
+  notifEmail  Boolean @default(true) // E-posta bildirimleri
+  notifSystem Boolean @default(true) // Sistem/uygulama bildirimleri
+
+  // Ek Profil Bilgileri
+  gender              String?
+  birthDate           DateTime?
+  registrationPurpose String?   @db.Text
+
+  // STK İlişkisi (Kullanıcı Beyanı)
+  isStkOfficial   Boolean @default(false) // STK yetkilisi mi?
+  stkOfficialRole String? // STK'daki görevi (Bşk, Bşk Yrd vb.)
+  isStkMember     Boolean @default(false) // Herhangi bir STK'ya üye mi?
+  memberStkName   String? // Üye olduğu STK'nın adı
+
+  // Şube İlişkisi (Şube yöneticileri için)
+  managedBranchId String?
+  managedBranch   STKBranch? @relation("BranchManagers", fields: [managedBranchId], references: [id], onDelete: SetNull)
 
   // İlişkiler
   stk           STK?           @relation("STKManager")
@@ -48,10 +84,13 @@ model User {
   lastLoginAt      DateTime?
   messageCampaigns MessageCampaign[]
   documents        Document[]
+  interests        UserInterest[]
+  memberships      Member[]          @relation("UserMemberships")
 
   @@index([email])
   @@index([role])
   @@index([status])
+  @@index([managedBranchId])
 }
 
 model Session {
@@ -76,21 +115,24 @@ model Session {
 // ==========================================
 
 enum STKType {
-  DERNEK // Dernek
-  VAKIF // Vakıf
-  SENDIKA // Sendika
-  MESLEK_ODA // Meslek Odası
-  KOOPERATIF // Kooperatif
-  DIGER // Diğer
+  DERNEK        // Dernek
+  VAKIF         // Vakıf
+  SENDIKA       // Sendika
+  KONFEDERASYON // Konfederasyon (DB'de mevcut)
+  MESLEK_ODA    @map("MESLEK_ODASI") // Meslek Odası
+  KOOPERATIF    // Kooperatif
+  DIGER         // Diğer
+
+  @@map("OrganizationType") // DB'deki enum adı
 }
 
 enum STKStatus {
-  PENDING // Başvuru beklemede
-  APPROVED // Onaylandı
-  REJECTED // Reddedildi
-  ACTIVE // Aktif
+  PENDING   // Başvuru beklemede
+  ACTIVE    // Aktif
   SUSPENDED // Askıya alındı
-  INACTIVE // Pasif
+  INACTIVE  // Pasif
+
+  @@map("OrganizationStatus") // DB'deki enum adı
 }
 
 model STK {
@@ -98,10 +140,18 @@ model STK {
 
   // Temel Bilgiler
   name               String
+  slug               String?   @unique // URL dostu isim
+  adCode             String?   @unique // Mobil arama kodu (SND-1234)
   type               STKType
   status             STKStatus @default(PENDING)
   registrationNumber String?   @unique // Kuruluş tescil numarası
   taxNumber          String? // Vergi numarası
+
+  // Çok Kanallı Kredi/Kota Sistemi
+  smsCredits      Int @default(0) // SMS paketi bakiyesi
+  whatsappCredits Int @default(0) // WhatsApp mesaj bakiyesi
+  emailCredits    Int @default(0) // E-posta bakiyesi
+  pushCredits     Int @default(0) // Push bildirim bakiyesi
 
   // İletişim Bilgileri
   email   String
@@ -116,8 +166,8 @@ model STK {
 
   // Diğer Bilgiler
   foundedAt   DateTime? // Kuruluş tarihi
-  description String?   @db.Text
   logo        String?
+  description String?   @db.Text
   documents   Json? // Belgeler (JSON array)
 
   // Tüzük Belgesi
@@ -125,8 +175,8 @@ model STK {
   statuteUploadedAt DateTime? // Tüzük yükleme tarihi
 
   // İlişkiler
-  managerId String   @unique
-  manager   User     @relation("STKManager", fields: [managerId], references: [id])
+  managerId String?  @unique
+  manager   User?    @relation("STKManager", fields: [managerId], references: [id])
   package   Package? @relation(fields: [packageId], references: [id])
   packageId String?
 
@@ -157,7 +207,12 @@ model STK {
   documentTemplates   DocumentTemplate[]
   stkroles            STKRole[]
   archives            Archive[]
+  applicationHistory  ApplicationHistory[]
+  resignationHistory  ResignationHistory[]
+  branches            STKBranch[]
+  activities          STKActivity[]
 
+  @@map("STKOrganization") // DB'deki tablo adı
   @@index([status])
   @@index([type])
   @@index([name])
@@ -264,6 +319,7 @@ model BoardDecision {
 enum DecisionMemberType {
   MEMBERSHIP_ACCEPT // Üyelik kabulü
   RESIGNATION_ACCEPT // İstifa kabulü
+  RESIGNATION_REJECT // İstifa reddi
   EXPULSION // İhraç
   OTHER // Diğer
 }
@@ -295,15 +351,17 @@ enum MemberCategory {
   ONURSAL // Onursal üye
   KURUMSAL // Kurumsal üye
   GENCLIK // Gençlik üyesi
+  GONULLU // Gönüllü
 }
 
 // Üye Kayıt Kaynağı
 enum RegistrationSource {
-  ONLINE // Online başvuru
-  FORM // Fiziksel form
-  REFERENCE // Referans ile
-  TRANSFER // Nakil
-  FOUNDING // Kurucu üye
+  ONLINE    // Online başvuru
+  IN_PERSON // Yüz yüze başvuru
+  TRANSFER  // Nakil
+  FOUNDER   // Kurucu üye
+  IMPORT    // Toplu içe aktarma
+  MOBILE    // Mobil uygulama
 }
 
 enum MemberStatus {
@@ -315,12 +373,18 @@ enum MemberStatus {
   EXPELLED // İhraç edildi
   INACTIVE // Pasif
   DECEASED // Vefat
+  REJECTED // Başvuru Reddedildi
+  DELETED // Soft-delete (loglu güvenli silme)
 }
 
 model Member {
   id    String @id @default(cuid())
   stkId String
   stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Sistem İlişkisi (Zorunlu değil, anonim/manuel eklenen üyeler için)
+  userId String?
+  user   User?   @relation("UserMemberships", fields: [userId], references: [id], onDelete: SetNull)
 
   // Kişisel Bilgiler
   memberNumber String? // Üye numarası (STK'ya özgü)
@@ -365,11 +429,19 @@ model Member {
   kvkkConsentDate  DateTime?
   marketingConsent Boolean   @default(false)
 
+  // Şube İlişkisi (opsiyonel)
+  branchId String?
+  branch   STKBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
   // İlişkiler
-  application      MembershipApplication?
-  payments         Payment[]
-  relatedDecisions DecisionMember[]
-  notes            MemberNote[]
+  application         MembershipApplication?
+  payments            Payment[]
+  relatedDecisions    DecisionMember[]
+  notes               MemberNote[]
+  resignationHistory  ResignationHistory[]
+  assemblyAttendances AssemblyAttendee[]
+  appointedProxies    AssemblyProxy[]        @relation("AppointedProxies")
+  receivedProxies     AssemblyProxy[]        @relation("ReceivedProxies")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -405,7 +477,8 @@ model MembershipApplication {
   boardDecisionDate   DateTime?
 
   // Ret Bilgileri
-  rejectionReason String? @db.Text
+  rejectionReason    String?              @db.Text
+  applicationHistory ApplicationHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -591,6 +664,7 @@ enum PaymentStatus {
   REJECTED // Reddedildi
   CANCELLED // İptal edildi
   REFUNDED // İade edildi
+  DELETED // Soft-delete (loglu güvenli silme)
 }
 
 enum PaymentType {
@@ -671,15 +745,19 @@ enum AuditAction {
   MEMBER_REJECT
   MEMBER_RESIGN
   MEMBER_EXPEL
+  MEMBER_DELETE // Soft-delete (loglu güvenli silme)
 
   // Ödeme İşlemleri
   PAYMENT_CREATE
   PAYMENT_CONFIRM
   PAYMENT_REJECT
   PAYMENT_CANCEL
+  PAYMENT_DELETE // Soft-delete (loglu güvenli silme)
 
   // Diğer
   BOARD_DECISION
+  BOARD_MEMBER_ADD
+  BOARD_MEMBER_REMOVE
   DUES_PLAN_CREATE
   DUES_PLAN_UPDATE
   PACKAGE_CREATE
@@ -733,6 +811,20 @@ model AuditLog {
   @@index([createdAt])
 }
 
+enum NotificationType {
+  SYSTEM
+  BECAYIS_MATCH
+  AD_APPROVED
+  MESSAGE
+  STK_ALERT
+  PAYMENT_REMINDER
+  CV_UPDATE
+  AD_REJECTED
+  PROFILE_UPDATE
+  STK_CAMPAIGN
+  CONSULTANT_REQUEST
+}
+
 model Notification {
   id     String @id @default(cuid())
   userId String
@@ -740,8 +832,8 @@ model Notification {
 
   // Bildirim İçeriği
   title   String
-  message String @db.Text
-  type    String // info, success, warning, error
+  message String           @db.Text
+  type    NotificationType
 
   // Durum
   isRead Boolean   @default(false)
@@ -750,6 +842,7 @@ model Notification {
   // Bağlantı
   link     String?
   metadata Json?
+  icon     String?
 
   createdAt DateTime @default(now())
 
@@ -774,12 +867,28 @@ model Sector {
   lastUpdated    DateTime?
   dataSource     String? // "TÜİK 2025", "SGK 2025"
 
-  regionalData SectorRegionalData[]
-  stkSectors   STKSector[]
-  competitors  Competitor[]
+  regionalData  SectorRegionalData[]
+  stkSectors    STKSector[]
+  competitors   Competitor[]
+  userInterests UserInterest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Kullanıcı İlgi Alanları (User-Sector many-to-many)
+model UserInterest {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectorId String
+  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sectorId])
+  @@index([userId])
+  @@index([sectorId])
 }
 
 // İl/Bölge Bazlı Sektör Verileri
@@ -898,21 +1007,21 @@ model MessageCampaign {
 
   // Mesaj Bilgileri
   title       String // Kampanya adı (iç kullanım)
-  messageType MessageType
+  messageType String @default("SMS") // SMS, PUSH, EMAIL, WHATSAPP
   subject     String? // Push/Email için başlık
-  content     String      @db.Text // Mesaj içeriği
+  content     String  @db.Text // Mesaj içeriği
 
   // Hedef Kitle
-  targetAudience TargetAudience @default(ALL_ACTIVE)
+  targetAudience String @default("ALL_MEMBERS")
   targetFilters  Json? // Özel filtreler
 
   // Gönderim
-  status         MessageStatus @default(DRAFT)
+  status         String    @default("SENT") // DRAFT, SCHEDULED, SENDING, SENT, FAILED, CANCELLED
   scheduledAt    DateTime? // Zamanlanmış gönderim
   sentAt         DateTime? // Gönderim zamanı
-  recipientCount Int           @default(0)
-  deliveredCount Int           @default(0)
-  failedCount    Int           @default(0)
+  recipientCount Int       @default(0)
+  deliveredCount Int       @default(0)
+  failedCount    Int       @default(0)
 
   // Yönetici Bilgileri
   createdById String
@@ -924,6 +1033,10 @@ model MessageCampaign {
   blockedAt     DateTime?
   blockedById   String?
 
+  // Kanal ve Maliyet Takibi
+  channel  String? // PUSH, EMAIL, WHATSAPP, SMS
+  smsCost  Int     @default(0) // Bu kampanyanın yediği kredi miktarı
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -932,7 +1045,7 @@ model MessageCampaign {
 
   @@index([stkId])
   @@index([status])
-  @@index([messageType])
+  @@index([channel])
 }
 
 model MessageRecipient {
@@ -1078,6 +1191,12 @@ enum AttendanceType {
   BY_PROXY // Vekaletle
 }
 
+enum AttendeeStatus {
+  PENDING // Beklemede (bildirim gönderildi, cevap bekleniyor)
+  ACCEPTED // Kabul edildi (şahsen katılacak)
+  REJECTED // Reddedildi (nedeni ile birlikte)
+}
+
 model GeneralAssembly {
   id    String @id @default(cuid())
   stkId String
@@ -1135,16 +1254,24 @@ model AssemblyAttendee {
   assemblyId String
   assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
   memberId   String
+  member     Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
-  attendType  AttendanceType @default(IN_PERSON)
+  attendType AttendanceType @default(IN_PERSON)
+
+  // Bildirim Onay Sistemi
+  status          AttendeeStatus @default(PENDING) // Kabul/Ret durumu
+  rejectionReason String?        @db.Text // Ret nedeni (tabloda gösterilecek)
+  respondedAt     DateTime? // Üye ne zaman cevap verdi
+
   checkinTime DateTime?
-  signature   Boolean        @default(false) // İmza attı mı
+  signature   Boolean   @default(false) // İmza attı mı
 
   createdAt DateTime @default(now())
 
   @@unique([assemblyId, memberId])
   @@index([assemblyId])
   @@index([memberId])
+  @@index([status])
 }
 
 model AssemblyProxy {
@@ -1154,7 +1281,10 @@ model AssemblyProxy {
 
   giverId    String // Vekalet veren üye ID
   receiverId String // Vekalet alan üye ID
-  proxyDoc   String? // Vekaletname dosyası
+
+  giver    Member  @relation("AppointedProxies", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver Member  @relation("ReceivedProxies", fields: [receiverId], references: [id], onDelete: Cascade)
+  proxyDoc String? // Vekaletname dosyası
 
   isApproved Boolean   @default(false)
   approvedBy String?
@@ -1263,4 +1393,166 @@ model Archive {
   @@index([year])
   @@index([recordType])
   @@index([isLocked])
+}
+
+// ==========================================
+// BAŞVURU GEÇMİŞİ LOGLARI
+// ==========================================
+
+model ApplicationHistory {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  applicationId String
+  application   MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  // Snapshot Veriler
+  status              MemberStatus
+  applicationDate     DateTime?
+  boardDecisionNumber String?
+  boardDecisionDate   DateTime?
+  rejectionReason     String?
+  reviewNotes         String?
+  reviewedBy          String?
+  reviewDate          DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([stkId])
+  @@index([applicationId])
+}
+
+model ResignationHistory {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // Snapshot
+  resignationDate DateTime // The time of resignation (or request)
+  leaveReason     String?
+  status          MemberStatus // RESIGNED or REQ
+
+  // Decision Info (if finalized)
+  boardDecisionNumber String?
+  boardDecisionDate   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([stkId])
+  @@index([memberId])
+}
+
+// ==========================================
+// ŞUBE / TEMSİLCİLİK YÖNETİMİ
+// ==========================================
+
+model STKBranch {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Şube Bilgileri
+  name     String  // Örn: "Ankara 1 Nolu Şube", "İstanbul Anadolu Temsilciliği"
+  code     String? // Şube kodu (opsiyonel: "ANK-01")
+  adCode   String? @unique // Mobil arama kodu (SND-1234-ANK01)
+  city     String
+  district String?
+  address  String?
+  phone    String?
+  email    String?
+
+  // Çok Kanallı Kredi/Kota Sistemi (Şube bazlı)
+  smsCredits      Int @default(0)
+  whatsappCredits Int @default(0)
+  emailCredits    Int @default(0)
+  pushCredits     Int @default(0)
+
+  // Şube Yöneticisi
+  managerName  String? // Şube başkanı adı
+  managerPhone String?
+  managerEmail String?
+
+  // Durum
+  isActive Boolean @default(true)
+
+  // İlişkiler
+  members        Member[]
+  branchManagers User[]        @relation("BranchManagers")
+  activities     STKActivity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stkId, code])
+  @@index([stkId])
+  @@index([city])
+  @@index([isActive])
+  @@index([adCode])
+}
+
+// ==========================================
+// FALİYETLER / ETKİNLİKLER
+// ==========================================
+
+model STKActivity {
+  id    String @id @default(cuid())
+  stkId String
+  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  // Opsiyonel şube bağlantısı (şube faaliyeti ise)
+  branchId String?
+  branch   STKBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  // Faaliyet Bilgileri
+  title       String
+  content     String?   @db.Text // Açıklama/İçerik
+  date        DateTime? // Etkinlik tarihi
+  location    String?   // Etkinlik yeri
+  imageUrl    String?   // Kapak görseli
+  isPublished Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stkId])
+  @@index([branchId])
+  @@index([date])
+  @@index([isPublished])
+}
+
+// ==========================================
+// PLATFORM BAŞVURULARI (Landing Page)
+// ==========================================
+
+model STKPlatformApplication {
+  id String @id @default(cuid())
+
+  // STK Bilgileri
+  stkName String // Kuruluş adı
+  stkType String // DERNEK, VAKIF, SENDIKA, MESLEK_ODA, KOOPERATIF, DIGER
+
+  // Yetkili Kişi Bilgileri
+  contactName  String
+  contactPhone String
+  contactEmail String
+
+  // Opsiyonel
+  description String? @db.Text
+
+  // Başvuru Durumu
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNote  String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([contactEmail])
+  @@index([createdAt])
 }
