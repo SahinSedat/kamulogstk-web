@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 
 // POST /api/stk/decisions/[id]/members - Üye ilişkilendir
-// Note: This endpoint will be fully functional after DecisionMember table migration
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -32,27 +31,47 @@ export async function POST(
             return NextResponse.json({ error: 'Karar bulunamadı' }, { status: 404 })
         }
 
-        const body = await request.json()
-        const { memberId, type } = body
+        if (decision.status === 'FINALIZED') {
+            return NextResponse.json({ error: 'Kesinleşmiş karara üye eklenemez' }, { status: 400 })
+        }
 
-        if (!memberId || !type) {
+        const body = await request.json()
+        const { memberId, memberIds, type, notes } = body
+
+        const idsToProcess = memberIds || (memberId ? [memberId] : [])
+
+        if (idsToProcess.length === 0 || !type) {
             return NextResponse.json(
-                { error: 'Üye ve ilişki tipi zorunludur' },
+                { error: 'Üye seçimi ve ilişki tipi zorunludur' },
                 { status: 400 }
             )
         }
 
-        // Üye kontrolü
-        const member = await prisma.member.findFirst({
-            where: { id: memberId, stkId: stk.id }
+        // Üyelerin STK'ya ait olduğunu doğrula
+        const validMembers = await prisma.member.findMany({
+            where: {
+                id: { in: idsToProcess },
+                stkId: stk.id
+            },
+            select: { id: true, name: true, surname: true }
         })
 
-        if (!member) {
-            return NextResponse.json({ error: 'Üye bulunamadı' }, { status: 404 })
+        if (validMembers.length === 0) {
+            return NextResponse.json({ error: 'Geçerli üye bulunamadı' }, { status: 404 })
         }
 
-        // Note: After migration, use DecisionMember model
-        // const decisionMember = await prisma.decisionMember.create({...})
+        const validIds = validMembers.map(m => m.id)
+
+        // Toplu oluştur (varsa atla)
+        const result = await prisma.decisionMember.createMany({
+            data: validIds.map(mid => ({
+                decisionId: id,
+                memberId: mid,
+                type,
+                notes: notes || null
+            })),
+            skipDuplicates: true
+        })
 
         // Audit log
         await prisma.auditLog.create({
@@ -63,15 +82,12 @@ export async function POST(
                 userId: user.id,
                 userEmail: user.email,
                 userName: user.name,
-                description: `Karara üye ilişkilendirildi: ${member.name} ${member.surname} (${type})`,
+                description: `Karara ${result.count} üye ilişkilendirildi (${type})`,
                 stkId: stk.id
             }
         })
 
-        return NextResponse.json({
-            success: true,
-            message: 'Migration sonrası tam aktif olacak'
-        })
+        return NextResponse.json({ count: result.count, success: true }, { status: 201 })
     } catch (error) {
         console.error('Decision member link error:', error)
         return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
@@ -107,19 +123,22 @@ export async function DELETE(
             return NextResponse.json({ error: 'Karar bulunamadı' }, { status: 404 })
         }
 
-        const body = await request.json()
-        const { memberId } = body
-
-        if (!memberId) {
-            return NextResponse.json({ error: 'Üye ID zorunludur' }, { status: 400 })
+        if (decision.status === 'FINALIZED') {
+            return NextResponse.json({ error: 'Kesinleşmiş karardan üye çıkarılamaz' }, { status: 400 })
         }
 
-        // Note: After migration, delete from DecisionMember
+        const body = await request.json()
+        const { decisionMemberId } = body
 
-        return NextResponse.json({
-            success: true,
-            message: 'Migration sonrası tam aktif olacak'
+        if (!decisionMemberId) {
+            return NextResponse.json({ error: 'İlişki ID zorunludur' }, { status: 400 })
+        }
+
+        await prisma.decisionMember.delete({
+            where: { id: decisionMemberId }
         })
+
+        return NextResponse.json({ success: true })
     } catch (error) {
         console.error('Decision member unlink error:', error)
         return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })

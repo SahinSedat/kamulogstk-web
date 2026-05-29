@@ -1,6 +1,11 @@
-import prisma from '@/lib/prisma'
-import { hashPassword } from '@/lib/auth'
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
+const prisma = new PrismaClient()
+
+async function hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 12)
+}
 async function main() {
     console.log('🌱 Seeding database...')
 
@@ -19,6 +24,42 @@ async function main() {
         },
     })
     console.log('✅ Admin user created:', admin.email)
+
+    // Create second admin user
+    const admin2Password = await hashPassword('cihat123')
+    const admin2 = await prisma.user.upsert({
+        where: { email: 'chtszgzl@gmail.com' },
+        update: {},
+        create: {
+            email: 'chtszgzl@gmail.com',
+            password: admin2Password,
+            name: 'Cihat',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            phone: '',
+        },
+    })
+    console.log('✅ Admin 2 user created:', admin2.email)
+
+    // Create main admin user
+    const mainAdminPassword = await hashPassword('Sedat.,34')
+    const mainAdmin = await prisma.user.upsert({
+        where: { email: 'admin@kamulog.net' },
+        update: {
+            password: mainAdminPassword,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+        },
+        create: {
+            email: 'admin@kamulog.net',
+            password: mainAdminPassword,
+            name: 'Admin',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            phone: '',
+        },
+    })
+    console.log('✅ Main Admin user created:', mainAdmin.email)
 
     // Create sample packages
     const packages = await Promise.all([

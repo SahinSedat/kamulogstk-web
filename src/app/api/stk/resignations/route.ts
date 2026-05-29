@@ -19,12 +19,29 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url)
-        const status = searchParams.get('status') || 'RESIGNATION_REQ'
+        const status = searchParams.get('status')
 
         const resignations = await prisma.member.findMany({
             where: {
                 stkId: stk.id,
-                status: status as 'RESIGNATION_REQ' | 'RESIGNED'
+                status: status && status !== 'all'
+                    ? status as 'RESIGNATION_REQ' | 'RESIGNED'
+                    : { in: ['RESIGNATION_REQ', 'RESIGNED'] }
+            },
+            include: {
+                relatedDecisions: {
+                    include: {
+                        decision: {
+                            select: {
+                                id: true,
+                                decisionNumber: true,
+                                decisionDate: true,
+                                subject: true,
+                                status: true
+                            }
+                        }
+                    }
+                }
             },
             orderBy: { updatedAt: 'desc' }
         })
@@ -39,11 +56,74 @@ export async function GET(request: NextRequest) {
             })
         ])
 
+        // Resignation History fetch
+        const history = await prisma.resignationHistory.findMany({
+            where: {
+                stkId: stk.id,
+                // Status filtering could be applied here if needed across types
+            },
+            include: {
+                member: true
+            },
+            orderBy: { resignationDate: 'desc' }
+        })
+
+        // Transform Member items
+        const currentItems = await Promise.all(resignations.map(async (m) => {
+            // ... existing map logic if any transformation needed ...
+            // Actually prisma returns object, frontend expects object.
+            // We just need to ensure shape matches.
+            return m;
+        }));
+
+        // Transform History items to match Member/Resignation shape
+        const historyItems = history.map(h => {
+            return {
+                id: h.id, // History ID
+                // Member details
+                name: h.member.name,
+                surname: h.member.surname,
+                memberNumber: h.member.memberNumber,
+                email: h.member.email,
+                phone: h.member.phone,
+                // Resignation details from Snapshot
+                status: h.status,
+                leaveReason: h.leaveReason,
+                leaveDate: h.resignationDate,
+                joinDate: h.member.joinDate, // Might be new join date?
+                updatedAt: h.createdAt,
+                // decisions
+                relatedDecisions: h.boardDecisionNumber ? [{
+                    decision: {
+                        id: 'history-decision', // Dummy ID
+                        decisionNumber: h.boardDecisionNumber,
+                        decisionDate: h.boardDecisionDate,
+                        subject: 'İstifa Kabulü (Geçmiş)',
+                        status: 'FINALIZED'
+                    }
+                }] : []
+            }
+        })
+
+        // Merge and Sort
+        // Note: resignations from prisma is Member[]
+        // historyItems is mapped object.
+        // We need to verify frontend Resignation interface matches what prisma Member returns?
+        // Frontend expects member properties + relatedDecisions.
+        // Prisma Member query included relatedDecisions.
+        // So types are compatible-ish.
+
+        const combined = [...resignations, ...historyItems].sort((a, b) => {
+            const dateA = new Date(a.updatedAt || a.leaveDate || 0).getTime();
+            const dateB = new Date(b.updatedAt || b.leaveDate || 0).getTime();
+            return dateB - dateA;
+        })
+
         return NextResponse.json({
-            resignations,
+            resignations: combined,
             stats: {
                 pending: pendingCount,
-                resigned: resignedCount
+                resigned: resignedCount + history.length // Include history in stats? Maybe separate?
             }
         })
     } catch (error) {
@@ -69,7 +149,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { memberId, reason } = body
+        const { memberId, action, reason, decisionNumber, decisionDate } = body
 
         if (!memberId) {
             return NextResponse.json({ error: 'Üye ID zorunludur' }, { status: 400 })
@@ -83,6 +163,100 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Üye bulunamadı' }, { status: 404 })
         }
 
+        // Action: Approve Resignation
+        if (action === 'approve') {
+            // Status check: Should be RESIGNATION_REQ (or ACTIVE if direct info?)
+            // User says "istifa talebi onaylama". Usually implies request exists.
+            // But we can be flexible.
+
+            // Archive Application to ApplicationHistory (preserve the ACTIVE record)
+            const application = await prisma.membershipApplication.findFirst({
+                where: { memberId: member.id, stkId: stk.id }
+            })
+            if (application) {
+                await prisma.applicationHistory.create({
+                    data: {
+                        stkId: stk.id,
+                        applicationId: application.id,
+                        status: application.status, // e.g. ACTIVE
+                        applicationDate: application.applicationDate,
+                        boardDecisionNumber: application.boardDecisionNumber,
+                        boardDecisionDate: application.boardDecisionDate,
+                        rejectionReason: application.rejectionReason,
+                        reviewNotes: application.reviewNotes,
+                        reviewedBy: application.reviewedBy,
+                        reviewDate: application.reviewDate || new Date(),
+                    }
+                })
+
+                // Update application status to RESIGNED
+                await prisma.membershipApplication.update({
+                    where: { id: application.id },
+                    data: {
+                        status: 'RESIGNED' as any,
+                        reviewNotes: reason || 'İstifa',
+                        reviewDate: new Date()
+                    }
+                })
+            }
+
+            // Create Resignation History
+            await prisma.resignationHistory.create({
+                data: {
+                    stkId: stk.id,
+                    memberId: member.id,
+                    status: 'RESIGNED',
+                    leaveReason: member.leaveReason || reason || 'İstifa Onayı',
+                    resignationDate: new Date(),
+                    boardDecisionNumber: decisionNumber,
+                    boardDecisionDate: decisionDate ? new Date(decisionDate) : undefined
+                }
+            })
+
+            // Update Member
+            const updated = await prisma.member.update({
+                where: { id: memberId },
+                data: {
+                    status: 'RESIGNED',
+                    leaveDate: new Date(),
+                    // leaveReason might already be set from request.
+                    // If not, use generic? 
+                    // No, usually kept as is or updated.
+                }
+            })
+
+            // Audit
+            await prisma.auditLog.create({
+                data: {
+                    action: 'MEMBER_UPDATE',
+                    entityType: 'Member',
+                    entityId: memberId,
+                    userId: user.id,
+                    userEmail: user.email,
+                    userName: user.name,
+                    description: `İstifa onaylandı: ${member.name} ${member.surname}`,
+                    stkId: stk.id
+                }
+            })
+
+            // Create notification for resigned member
+            if (member.userId) {
+                await prisma.notification.create({
+                    data: {
+                        userId: member.userId,
+                        title: 'İstifanız Kabul Edildi',
+                        message: `${stk.name} derneğinden istifanız kabul edilmiştir. Tüm işlemleri tamamlanmış sayılmıştır.`,
+                        type: 'resignation',
+                        link: `/uyegirisi`,
+                        isRead: false
+                    }
+                })
+            }
+
+            return NextResponse.json({ success: true, member: updated })
+        }
+
+        // Default: Create Resignation Request
         if (member.status !== 'ACTIVE') {
             return NextResponse.json(
                 { error: 'Sadece aktif üyeler için istifa talebi oluşturulabilir' },

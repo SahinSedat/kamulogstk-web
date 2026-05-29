@@ -9,7 +9,7 @@ const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 )
 const JWT_EXPIRES_IN = '7d'
-const COOKIE_NAME = 'auth_token'
+const COOKIE_NAME = 'auth-token'
 
 // Types
 export interface JWTPayload {
@@ -55,7 +55,8 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET)
         return payload as unknown as JWTPayload
-    } catch {
+    } catch (error) {
+        console.log('Auth Debug: Token verification failed:', error)
         return null
     }
 }
@@ -74,7 +75,9 @@ export async function setAuthCookie(token: string): Promise<void> {
 
 export async function getAuthCookie(): Promise<string | null> {
     const cookieStore = await cookies()
-    return cookieStore.get(COOKIE_NAME)?.value || null
+    const token = cookieStore.get(COOKIE_NAME)?.value || null
+    console.log('Auth Debug: Cookie retrieved:', token ? 'Token exists' : 'No token')
+    return token
 }
 
 export async function removeAuthCookie(): Promise<void> {
@@ -84,11 +87,19 @@ export async function removeAuthCookie(): Promise<void> {
 
 // Get Current User
 export async function getCurrentUser(): Promise<AuthUser | null> {
+    console.log('Auth Debug: getCurrentUser started')
     const token = await getAuthCookie()
-    if (!token) return null
+    if (!token) {
+        console.log('Auth Debug: No token found in cookie')
+        return null
+    }
 
     const payload = await verifyToken(token)
-    if (!payload) return null
+    if (!payload) {
+        console.log('Auth Debug: Token invalid or payload null')
+        return null
+    }
+    console.log('Auth Debug: Token valid, payload userId:', payload.userId)
 
     const user = await prisma.user.findUnique({
         where: { id: payload.userId },
@@ -105,7 +116,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
         }
     })
 
-    if (!user || user.status !== 'ACTIVE') return null
+    if (!user || (user.status !== 'ACTIVE' && user.status !== 'PENDING')) return null;
 
     return {
         id: user.id,

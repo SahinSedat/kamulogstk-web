@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
     UserMinus, Clock, CheckCircle, XCircle, FileText,
-    Calendar, AlertTriangle, Link2
+    Calendar, AlertTriangle, Link2, Loader2
 } from 'lucide-react'
 
 interface RelatedDecision {
@@ -36,14 +36,13 @@ interface Resignation {
 }
 
 const statusConfig = {
-    RESIGNATION_REQ: { label: 'Beklemede', variant: 'warning' as const, icon: Clock },
-    RESIGNED: { label: 'Onaylandı', variant: 'success' as const, icon: CheckCircle },
+    RESIGNATION_REQ: { label: 'Beklemede', variant: 'warning' as const, icon: Clock, color: 'amber' },
+    RESIGNED: { label: 'Onaylandı', variant: 'success' as const, icon: CheckCircle, color: 'emerald' },
 }
 
 export default function ResignationsPage() {
     const [resignations, setResignations] = useState<Resignation[]>([])
     const [loading, setLoading] = useState(true)
-    const [statusFilter, setStatusFilter] = useState<'RESIGNATION_REQ' | 'RESIGNED'>('RESIGNATION_REQ')
     const [stats, setStats] = useState({ pending: 0, resigned: 0 })
     const [showDetailDialog, setShowDetailDialog] = useState(false)
     const [selectedMember, setSelectedMember] = useState<Resignation | null>(null)
@@ -51,12 +50,12 @@ export default function ResignationsPage() {
 
     useEffect(() => {
         fetchResignations()
-    }, [statusFilter])
+    }, [])
 
     const fetchResignations = async () => {
         setLoading(true)
         try {
-            const res = await fetch(`/api/stk/resignations?status=${statusFilter}`)
+            const res = await fetch('/api/stk/resignations')
             const data = await res.json()
             if (data.resignations) {
                 setResignations(data.resignations)
@@ -79,7 +78,7 @@ export default function ResignationsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">İstifa Yönetimi</h1>
-                    <p className="text-slate-500 mt-1">Üye istifa taleplerini yönetin</p>
+                    <p className="text-slate-500 mt-1">Üye istifa talepleri ve işlem geçmişi</p>
                 </div>
             </div>
 
@@ -96,12 +95,9 @@ export default function ResignationsPage() {
 
             {/* İstatistikler */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card
-                    className={`cursor-pointer transition-all ${statusFilter === 'RESIGNATION_REQ' ? 'ring-2 ring-amber-500' : ''}`}
-                    onClick={() => setStatusFilter('RESIGNATION_REQ')}
-                >
+                <Card>
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/10 rounded-xl flex items-center justify-center">
                             <Clock className="w-6 h-6 text-amber-600" />
                         </div>
                         <div>
@@ -110,12 +106,9 @@ export default function ResignationsPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card
-                    className={`cursor-pointer transition-all ${statusFilter === 'RESIGNED' ? 'ring-2 ring-emerald-500' : ''}`}
-                    onClick={() => setStatusFilter('RESIGNED')}
-                >
+                <Card>
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center">
                             <CheckCircle className="w-6 h-6 text-emerald-600" />
                         </div>
                         <div>
@@ -126,47 +119,57 @@ export default function ResignationsPage() {
                 </Card>
             </div>
 
-            {/* Liste */}
+            {/* Log Listesi */}
             <Card>
                 <CardHeader>
-                    <CardTitle>
-                        {statusFilter === 'RESIGNATION_REQ' ? 'Bekleyen İstifa Talepleri' : 'Onaylanan İstifalar'} ({resignations.length})
-                    </CardTitle>
+                    <CardTitle>İstifa Kayıtları ({resignations.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <div className="text-center py-8 text-slate-500">Yükleniyor...</div>
+                        <div className="flex items-center justify-center py-12 text-slate-500 gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Yükleniyor...
+                        </div>
                     ) : resignations.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">
+                        <div className="text-center py-12 text-slate-500">
                             <UserMinus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>
-                                {statusFilter === 'RESIGNATION_REQ'
-                                    ? 'Bekleyen istifa talebi bulunmuyor'
-                                    : 'Onaylanan istifa bulunmuyor'}
-                            </p>
+                            <p>Henüz istifa kaydı bulunmuyor</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
-                            {resignations.map(member => {
-                                const StatusIcon = statusConfig[member.status].icon
-                                const hasDecision = member.relatedDecisions.length > 0
-                                return (
-                                    <div
-                                        key={member.id}
-                                        className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                                        onClick={() => handleViewDetail(member)}
-                                    >
-                                        <div className="flex items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl flex items-center justify-center text-white font-medium">
-                                                    {member.name[0]}{member.surname[0]}
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-semibold">{member.name} {member.surname}</span>
-                                                        <Badge variant={statusConfig[member.status].variant}>
-                                                            <StatusIcon className="w-3 h-3 mr-1" />
-                                                            {statusConfig[member.status].label}
+                        <div className="relative">
+                            {/* Timeline çizgisi */}
+                            <div className="absolute left-6 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+
+                            <div className="space-y-4">
+                                {resignations.map(member => {
+                                    const config = statusConfig[member.status]
+                                    const StatusIcon = config.icon
+                                    const hasDecision = member.relatedDecisions.length > 0
+                                    const isActive = member.status === 'RESIGNATION_REQ'
+
+                                    return (
+                                        <div
+                                            key={member.id}
+                                            className={`relative pl-14 pr-4 py-4 rounded-xl border transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 ${isActive
+                                                ? 'border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5'
+                                                : 'border-slate-200 dark:border-slate-700'
+                                                }`}
+                                            onClick={() => handleViewDetail(member)}
+                                        >
+                                            {/* Timeline noktası */}
+                                            <div className={`absolute left-3.5 top-5 w-5 h-5 rounded-full flex items-center justify-center ring-4 ring-white dark:ring-slate-900 ${isActive ? 'bg-amber-500' : 'bg-emerald-500'
+                                                }`}>
+                                                <StatusIcon className="w-3 h-3 text-white" />
+                                            </div>
+
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                        <span className="font-semibold text-slate-900 dark:text-white">
+                                                            {member.name} {member.surname}
+                                                        </span>
+                                                        <Badge variant={config.variant}>
+                                                            {config.label}
                                                         </Badge>
                                                         {hasDecision && (
                                                             <Badge variant="default" className="gap-1">
@@ -175,27 +178,28 @@ export default function ResignationsPage() {
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                                                    <div className="flex items-center gap-3 text-sm text-slate-500 mb-1">
                                                         <span>{member.memberNumber || 'No: -'}</span>
+                                                        <span>·</span>
                                                         <span>{member.email}</span>
+                                                    </div>
+                                                    {member.leaveReason && (
+                                                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 italic">
+                                                            &quot;{member.leaveReason}&quot;
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right text-xs text-slate-500 shrink-0">
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        {new Date(member.updatedAt).toLocaleDateString('tr-TR')}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="text-right text-sm text-slate-500">
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="w-4 h-4" />
-                                                    {new Date(member.updatedAt).toLocaleDateString('tr-TR')}
-                                                </div>
-                                            </div>
                                         </div>
-                                        {member.leaveReason && (
-                                            <div className="mt-3 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm text-slate-600 dark:text-slate-400">
-                                                <strong>Sebep:</strong> {member.leaveReason}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
+                            </div>
                         </div>
                     )}
                 </CardContent>
@@ -212,7 +216,7 @@ export default function ResignationsPage() {
                                     İstifa Detayı
                                 </DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                                 <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                                     <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl flex items-center justify-center text-white text-xl font-bold">
                                         {selectedMember.name[0]}{selectedMember.surname[0]}
@@ -313,7 +317,7 @@ export default function ResignationsPage() {
                         &quot;İstifa Kabulü&quot; olarak ilişkilendirin.
                     </p>
                     <DialogFooter>
-                        <Button onClick={() => window.location.href = '/stk/decisions'}>
+                        <Button onClick={() => window.location.href = '/stk/kararlar'}>
                             Kararlar Sayfasına Git
                         </Button>
                     </DialogFooter>

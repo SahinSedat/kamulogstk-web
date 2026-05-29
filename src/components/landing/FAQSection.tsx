@@ -54,8 +54,8 @@ export default function FAQSection() {
                         <div
                             key={index}
                             className={`bg-white/5 rounded-2xl border transition-all duration-300 ${openIndex === index
-                                    ? 'border-emerald-500/50 bg-emerald-500/5'
-                                    : 'border-white/10 hover:border-white/20'
+                                ? 'border-emerald-500/50 bg-emerald-500/5'
+                                : 'border-white/10 hover:border-white/20'
                                 }`}
                         >
                             <button

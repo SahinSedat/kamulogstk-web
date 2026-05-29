@@ -2,13 +2,30 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { Building2 } from 'lucide-react'
 
 export default function Footer() {
+    const pathname = usePathname()
+    const router = useRouter()
+
     const scrollToSection = (sectionId: string) => {
-        const element = document.getElementById(sectionId)
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' })
+        // Eğer ana sayfada değilsek, önce ana sayfaya git
+        if (pathname !== '/') {
+            router.push('/')
+            // Ana sayfa yüklendikten sonra scroll yap
+            setTimeout(() => {
+                const element = document.getElementById(sectionId)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+            }, 100)
+        } else {
+            // Zaten ana sayfadaysak direkt scroll yap
+            const element = document.getElementById(sectionId)
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
         }
     }
 
@@ -54,14 +71,14 @@ export default function Footer() {
                         <ul className="space-y-2 text-sm text-slate-400">
                             <li><Link href="/hakkimizda" className="hover:text-white transition-colors">Hakkımızda</Link></li>
                             <li><Link href="/iletisim" className="hover:text-white transition-colors">İletişim</Link></li>
-                            <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                            <li><Link href="/haber" className="hover:text-white transition-colors">Blog</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="text-white font-semibold mb-4">Yasal</h4>
                         <ul className="space-y-2 text-sm text-slate-400">
-                            <li><Link href="/gizlilik" className="hover:text-white transition-colors">Gizlilik Politikası</Link></li>
+                            <li><Link href="/gizlilik-politikasi" className="hover:text-white transition-colors">Gizlilik Politikası</Link></li>
                             <li><Link href="/kullanim-sartlari" className="hover:text-white transition-colors">Kullanım Şartları</Link></li>
                             <li><Link href="/kvkk" className="hover:text-white transition-colors">KVKK Aydınlatma</Link></li>
                         </ul>

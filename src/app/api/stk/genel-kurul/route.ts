@@ -107,6 +107,29 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // Send notifications to all active members
+        const activeMembers = await prisma.member.findMany({
+            where: {
+                stkId: payload.stkId,
+                status: 'ACTIVE',
+                userId: { not: null }
+            },
+            select: { userId: true }
+        })
+
+        if (activeMembers.length > 0) {
+            await prisma.notification.createMany({
+                data: activeMembers.map(member => ({
+                    userId: member.userId!,
+                    title: 'Yeni Genel Kurul',
+                    message: `${assemblyNumber}. Genel Kurul ${new Date(assemblyDate).toLocaleDateString('tr-TR')} tarihinde ${location} adresinde yapılacaktır.`,
+                    type: 'general_assembly',
+                    link: `/uyegirisi`,
+                    isRead: false
+                }))
+            })
+        }
+
         return NextResponse.json({ success: true, assembly })
     } catch (error) {
         console.error('Error creating assembly:', error)
@@ -164,6 +187,45 @@ export async function PUT(request: NextRequest) {
             }
         })
 
+        // Send status change notification if status changed
+        if (status && status !== existing.status) {
+            const activeMembers = await prisma.member.findMany({
+                where: {
+                    stkId: payload.stkId,
+                    status: 'ACTIVE',
+                    userId: { not: null }
+                },
+                select: { userId: true }
+            })
+
+            let notificationTitle = 'Genel Kurul Durum Değişimi'
+            let notificationMessage = 'Genel kurul durumu güncellendi.'
+
+            if (status === 'IN_PROGRESS') {
+                notificationTitle = 'Genel Kurul Başladı'
+                notificationMessage = `${existing.assemblyNumber}. Genel Kurul başlamıştır.`
+            } else if (status === 'COMPLETED') {
+                notificationTitle = 'Genel Kurul Tamamlandı'
+                notificationMessage = `${existing.assemblyNumber}. Genel Kurul tamamlanmıştır.`
+            } else if (status === 'POSTPONED') {
+                notificationTitle = 'Genel Kurul Ertelendi'
+                notificationMessage = `${existing.assemblyNumber}. Genel Kurul ertelenmiştir.`
+            }
+
+            if (activeMembers.length > 0) {
+                await prisma.notification.createMany({
+                    data: activeMembers.map(member => ({
+                        userId: member.userId!,
+                        title: notificationTitle,
+                        message: notificationMessage,
+                        type: 'general_assembly',
+                        link: `/uyegirisi`,
+                        isRead: false
+                    }))
+                })
+            }
+        }
+
         return NextResponse.json({ success: true, assembly })
     } catch (error) {
         console.error('Error updating assembly:', error)
@@ -202,8 +264,14 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Genel kurul bulunamadı' }, { status: 404 })
         }
 
+        // Katılımcısı olan tamamlanmış genel kurullar silinemez
         if (existing.status === 'COMPLETED') {
-            return NextResponse.json({ error: 'Tamamlanmış genel kurullar silinemez' }, { status: 400 })
+            const attendeeCount = await prisma.assemblyAttendee.count({
+                where: { assemblyId: id }
+            })
+            if (attendeeCount > 0) {
+                return NextResponse.json({ error: 'Katılımcısı olan tamamlanmış genel kurullar silinemez' }, { status: 400 })
+            }
         }
 
         await prisma.generalAssembly.delete({ where: { id } })

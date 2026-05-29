@@ -17,7 +17,7 @@ const aiFeatures = [
 
 export default function AISection() {
     return (
-        <section id="ai" className="py-20 px-4 relative overflow-hidden">
+        <section id="ai" className="py-20 px-4 relative overflow-hidden scroll-mt-24">
             <div className="absolute inset-0">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500 rounded-full blur-[200px] opacity-10" />
             </div>

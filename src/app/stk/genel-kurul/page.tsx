@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-
 interface Assembly {
     id: string
     assemblyType: 'OLAGAN' | 'OLAGANUSTU'
@@ -111,6 +110,8 @@ export default function GenelKurulPage() {
             })
 
             if (res.ok) {
+                setShowModal(false)
+                setEditingAssembly(null)
                 fetchAssemblies()
             } else {
                 const data = await res.json()
@@ -295,7 +296,12 @@ export default function GenelKurulPage() {
                                                 <h3 className="font-semibold text-slate-900 dark:text-white">
                                                     {assembly.assemblyNumber}. {assembly.assemblyType === 'OLAGAN' ? 'Olağan' : 'Olağanüstü'} Genel Kurul
                                                 </h3>
-                                                {getStatusBadge(assembly.status)}
+                                                {assembly.status === 'COMPLETED' && assembly._count.attendees === 0 ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                                                        <XCircle className="w-3 h-3" />
+                                                        Yetersiz Katılım
+                                                    </span>
+                                                ) : getStatusBadge(assembly.status)}
                                             </div>
                                             <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                                                 <span className="flex items-center gap-1">
@@ -334,7 +340,7 @@ export default function GenelKurulPage() {
                                             >
                                                 <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                                             </button>
-                                            {assembly.status !== 'COMPLETED' && (
+                                            {(assembly.status !== 'COMPLETED' || assembly._count.attendees === 0) && (
                                                 <button
                                                     onClick={() => handleDelete(assembly.id)}
                                                     className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
@@ -477,18 +483,21 @@ export default function GenelKurulPage() {
                                 </div>
                             )}
 
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => { setShowModal(false); setEditingAssembly(null) }}
-                                    className="dark:border-slate-600 dark:text-slate-300"
-                                >
-                                    İptal
-                                </Button>
-                                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                                    {editingAssembly ? 'Güncelle' : 'Oluştur'}
-                                </Button>
+                            <div className="flex justify-between pt-4">
+                                <div />
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => { setShowModal(false); setEditingAssembly(null) }}
+                                        className="dark:border-slate-600 dark:text-slate-300"
+                                    >
+                                        İptal
+                                    </Button>
+                                    <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                                        {editingAssembly ? 'Güncelle' : 'Oluştur'}
+                                    </Button>
+                                </div>
                             </div>
                         </form>
                     </div>

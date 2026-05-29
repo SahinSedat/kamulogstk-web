@@ -24,7 +24,21 @@ export async function GET(
         const { id } = await params
 
         const decision = await prisma.boardDecision.findFirst({
-            where: { id, stkId: stk.id }
+            where: { id, stkId: stk.id },
+            include: {
+                relatedMembers: {
+                    include: {
+                        member: {
+                            select: {
+                                id: true,
+                                name: true,
+                                surname: true,
+                                memberNumber: true
+                            }
+                        }
+                    }
+                }
+            }
         })
 
         if (!decision) {
@@ -93,6 +107,29 @@ export async function PUT(
                 stkId: stk.id
             }
         })
+
+        // Send notification to related members if decision is finalized
+        if (decision.status === 'FINALIZED' && existing.status !== 'FINALIZED') {
+            const relatedMembers = await prisma.decisionMemberRelation.findMany({
+                where: { boardDecisionId: id },
+                include: { member: true }
+            })
+
+            if (relatedMembers.length > 0) {
+                await prisma.notification.createMany({
+                    data: relatedMembers
+                        .filter(rel => rel.member.userId)
+                        .map(rel => ({
+                            userId: rel.member.userId,
+                            title: 'Karar Sonuçlandırıldı',
+                            message: `Sizinle ilgili ${decision.decisionNumber} nolu karar sonuçlandırılmıştır: ${decision.subject}`,
+                            type: 'decision',
+                            link: `/stk/kararlar/${id}`,
+                            isRead: false
+                        }))
+                })
+            }
+        }
 
         return NextResponse.json({ decision })
     } catch (error) {

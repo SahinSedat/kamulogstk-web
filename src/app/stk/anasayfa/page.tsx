@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,9 @@ import {
     CheckCircle,
     AlertCircle,
     Calendar,
+    Loader2,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface StatsCardProps {
     title: string
@@ -53,27 +55,55 @@ function StatsCard({ title, value, change, icon: Icon, iconColor, trend }: Stats
 }
 
 export default function STKDashboard() {
-    const stats = {
-        totalMembers: 342,
-        activeMembers: 298,
-        pendingApplications: 8,
-        monthlyDues: 15600,
-        collectedDues: 12400,
-        pendingDues: 3200,
+    const router = useRouter()
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [data, setData] = useState<{ stats: any, stkName: string } | null>(null)
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch('/api/stk/stats')
+                if (res.status === 404) {
+                    setError('Bağlı bir STK bulunamadı. Lütfen yönetici ile iletişime geçin.')
+                    return
+                }
+                const data = await res.json()
+                if (data.success) {
+                    setData(data)
+                } else {
+                    setError(data.error || 'İstatistikler yüklenemedi')
+                }
+            } catch (err) {
+                console.error('Stats fetch error:', err)
+                setError('Sunucu bağlantı hatası')
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStats()
+    }, [])
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            </div>
+        )
     }
 
-    const recentMembers = [
-        { name: 'Mehmet Kaya', status: 'active', date: '2 saat önce' },
-        { name: 'Ayşe Demir', status: 'pending', date: '5 saat önce' },
-        { name: 'Fatma Yıldız', status: 'active', date: '1 gün önce' },
-        { name: 'Ali Çelik', status: 'resignation', date: '2 gün önce' },
-    ]
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 bg-white/5 rounded-2xl border border-white/10">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <h2 className="text-xl font-bold text-white mb-2">Hata Oluştu</h2>
+                <p className="text-slate-400 mb-6">{error}</p>
+                <Button onClick={() => window.location.href = '/'}>Ana Sayfaya Dön</Button>
+            </div>
+        )
+    }
 
-    const upcomingPayments = [
-        { member: 'Ahmet Yılmaz', amount: 500, dueDate: '15 Ocak 2024' },
-        { member: 'Elif Arslan', amount: 500, dueDate: '15 Ocak 2024' },
-        { member: 'Mustafa Öz', amount: 500, dueDate: '20 Ocak 2024' },
-    ]
+    const { stats, stkName } = data!
 
     return (
         <div className="space-y-8">
@@ -81,7 +111,7 @@ export default function STKDashboard() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-                    <p className="text-slate-500 mt-1">STK genel görünümü ve istatistikler</p>
+                    <p className="text-slate-500 mt-1">{stkName} genel görünümü ve istatistikler</p>
                 </div>
                 <Button className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
                     <UserPlus className="w-4 h-4" />
@@ -94,18 +124,14 @@ export default function STKDashboard() {
                 <StatsCard
                     title="Toplam Üye"
                     value={stats.totalMembers}
-                    change={12}
                     icon={Users}
                     iconColor="bg-gradient-to-br from-blue-500 to-blue-600"
-                    trend="up"
                 />
                 <StatsCard
                     title="Aktif Üye"
                     value={stats.activeMembers}
-                    change={8}
                     icon={CheckCircle}
                     iconColor="bg-gradient-to-br from-emerald-500 to-emerald-600"
-                    trend="up"
                 />
                 <StatsCard
                     title="Bekleyen Başvuru"
@@ -116,10 +142,8 @@ export default function STKDashboard() {
                 <StatsCard
                     title="Aylık Tahsilat"
                     value={`₺${stats.collectedDues.toLocaleString('tr-TR')}`}
-                    change={15}
                     icon={Wallet}
                     iconColor="bg-gradient-to-br from-purple-500 to-pink-500"
-                    trend="up"
                 />
             </div>
 
@@ -131,14 +155,14 @@ export default function STKDashboard() {
                             <div>
                                 <p className="text-emerald-100">Tahsil Edilen</p>
                                 <p className="text-3xl font-bold mt-2">₺{stats.collectedDues.toLocaleString('tr-TR')}</p>
-                                <p className="text-sm text-emerald-100 mt-1">{Math.round((stats.collectedDues / stats.monthlyDues) * 100)}% tamamlandı</p>
+                                <p className="text-sm text-emerald-100 mt-1">{stats.monthlyDues > 0 ? Math.round((stats.collectedDues / stats.monthlyDues) * 100) : 0}% tamamlandı</p>
                             </div>
                             <TrendingUp className="w-12 h-12 text-emerald-200" />
                         </div>
                         <div className="mt-4 h-2 bg-emerald-400/30 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-white rounded-full"
-                                style={{ width: `${(stats.collectedDues / stats.monthlyDues) * 100}%` }}
+                                style={{ width: `${stats.monthlyDues > 0 ? (stats.collectedDues / stats.monthlyDues) * 100 : 0}%` }}
                             />
                         </div>
                     </CardContent>
@@ -150,7 +174,7 @@ export default function STKDashboard() {
                             <div>
                                 <p className="text-amber-100">Bekleyen Aidat</p>
                                 <p className="text-3xl font-bold mt-2">₺{stats.pendingDues.toLocaleString('tr-TR')}</p>
-                                <p className="text-sm text-amber-100 mt-1">{Math.round((stats.pendingDues / stats.monthlyDues) * 100)}% bekliyor</p>
+                                <p className="text-sm text-amber-100 mt-1">{stats.monthlyDues > 0 ? Math.round((stats.pendingDues / stats.monthlyDues) * 100) : 0}% bekliyor</p>
                             </div>
                             <AlertCircle className="w-12 h-12 text-amber-200" />
                         </div>
@@ -170,99 +194,6 @@ export default function STKDashboard() {
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Members */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Son Üye Hareketleri</CardTitle>
-                        <a href="/stk/members" className="text-sm text-emerald-600 hover:underline">
-                            Tümünü Gör
-                        </a>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {recentMembers.map((member, index) => (
-                                <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center text-white font-medium">
-                                            {member.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
-                                            <p className="text-sm text-slate-500">{member.date}</p>
-                                        </div>
-                                    </div>
-                                    <Badge variant={
-                                        member.status === 'active' ? 'success' :
-                                            member.status === 'pending' ? 'warning' : 'destructive'
-                                    }>
-                                        {member.status === 'active' ? 'Aktif' :
-                                            member.status === 'pending' ? 'Beklemede' : 'İstifa Talebi'}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Upcoming Payments */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Yaklaşan Ödemeler</CardTitle>
-                        <a href="/stk/payments" className="text-sm text-emerald-600 hover:underline">
-                            Tümünü Gör
-                        </a>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {upcomingPayments.map((payment, index) => (
-                                <div key={index} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
-                                            <Calendar className="w-5 h-5 text-slate-500" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-slate-900 dark:text-white">{payment.member}</p>
-                                            <p className="text-sm text-slate-500">{payment.dueDate}</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-lg font-semibold text-slate-900 dark:text-white">
-                                        ₺{payment.amount}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Member Distribution */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Üye Durumu Dağılımı</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {[
-                            { label: 'Aktif', count: 298, color: 'bg-emerald-500', percent: 87 },
-                            { label: 'Beklemede', count: 8, color: 'bg-amber-500', percent: 2 },
-                            { label: 'İstifa Talebi', count: 5, color: 'bg-orange-500', percent: 2 },
-                            { label: 'Pasif', count: 28, color: 'bg-slate-400', percent: 8 },
-                            { label: 'Vefat', count: 3, color: 'bg-slate-600', percent: 1 },
-                        ].map((item) => (
-                            <div key={item.label} className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                <div className={`w-12 h-12 ${item.color} rounded-full flex items-center justify-center text-white font-bold mx-auto mb-3`}>
-                                    {item.count}
-                                </div>
-                                <p className="font-medium text-slate-900 dark:text-white">{item.label}</p>
-                                <p className="text-sm text-slate-500">{item.percent}%</p>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }

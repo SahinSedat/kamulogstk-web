@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { MemberStatus } from '@prisma/client'
 
 interface RouteParams {
     params: Promise<{ id: string }>
@@ -82,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             await prisma.membershipApplication.update({
                 where: { id },
                 data: {
-                    status: 'ACTIVE',
+                    status: MemberStatus.ACTIVE,
                     boardDecisionNumber,
                     boardDecisionDate: new Date(boardDecisionDate),
                     reviewedBy: user.id,
@@ -95,7 +96,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             await prisma.member.update({
                 where: { id: application.memberId },
                 data: {
-                    status: 'ACTIVE',
+                    status: MemberStatus.ACTIVE,
                     joinDate: new Date()
                 }
             })
@@ -114,6 +115,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 }
             })
 
+            // Create notification for member
+            if (application.member.userId) {
+                await prisma.notification.create({
+                    data: {
+                        userId: application.member.userId,
+                        title: 'Üyelik Başvurusu Onaylandı',
+                        message: `${stk.name} derneğine üyelik başvurunuz onaylanmıştır. Artık tüm avantajlardan yararlanabilirsiniz.`,
+                        type: 'membership_application',
+                        link: `/stk/uyeler/${application.memberId}`,
+                        isRead: false
+                    }
+                })
+            }
+
             return NextResponse.json({
                 success: true,
                 message: 'Üyelik başvurusu onaylandı'
@@ -130,7 +145,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             await prisma.membershipApplication.update({
                 where: { id },
                 data: {
-                    status: 'EXPELLED',
+                    status: 'REJECTED' as any,
                     rejectionReason,
                     reviewedBy: user.id,
                     reviewDate: new Date(),
@@ -141,7 +156,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             // Update member status
             await prisma.member.update({
                 where: { id: application.memberId },
-                data: { status: 'EXPELLED' }
+                data: { status: 'REJECTED' as any }
             })
 
             // Log
@@ -157,6 +172,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                     stkId: stk.id
                 }
             })
+
+            // Create notification for rejected member
+            if (application.member.userId) {
+                await prisma.notification.create({
+                    data: {
+                        userId: application.member.userId,
+                        title: 'Üyelik Başvurusu Reddedildi',
+                        message: `${stk.name} derneğine üyelik başvurunuz reddedilmiştir. Gerekçe: ${rejectionReason}`,
+                        type: 'membership_application',
+                        link: `/stk/basvurularim`,
+                        isRead: false
+                    }
+                })
+            }
 
             return NextResponse.json({
                 success: true,

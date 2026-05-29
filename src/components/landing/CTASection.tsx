@@ -6,6 +6,33 @@ import { ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function CTASection() {
+    const [user, setUser] = React.useState<{ role: string } | null>(null)
+    const [loading, setLoading] = React.useState(true)
+
+    React.useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch('/api/auth/me')
+                const data = await res.json()
+                if (data.success) {
+                    setUser(data.user)
+                }
+            } catch (error) {
+                console.error('Auth check failed', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        checkAuth()
+    }, [])
+
+    const getDashboardLink = () => {
+        if (!user) return '/giris'
+        if (user.role === 'ADMIN') return '/sistemyoneticisi'
+        if (user.role === 'CITIZEN') return '/uyegirisi'
+        return '/stkuyesi'
+    }
+
     return (
         <section className="py-20 px-4">
             <div className="max-w-4xl mx-auto">
@@ -18,17 +45,30 @@ export default function CTASection() {
                         Kredi kartı gerekmez, iptal etmek kolay.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link href="/kayit">
-                            <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
-                                Hemen Başvurun
-                                <ChevronRight className="w-5 h-5 ml-1" />
-                            </Button>
-                        </Link>
-                        <Link href="/giris">
-                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10">
-                                Mevcut Hesaba Giriş
-                            </Button>
-                        </Link>
+                        {!loading && (
+                            user ? (
+                                <Link href={getDashboardLink()}>
+                                    <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                                        Panele Git
+                                        <ChevronRight className="w-5 h-5 ml-1" />
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href="/kayit">
+                                        <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                                            Hemen Başvurun
+                                            <ChevronRight className="w-5 h-5 ml-1" />
+                                        </Button>
+                                    </Link>
+                                    <Link href="/giris">
+                                        <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/20 text-white hover:bg-white/10">
+                                            Mevcut Hesaba Giriş
+                                        </Button>
+                                    </Link>
+                                </>
+                            )
+                        )}
                     </div>
                 </div>
             </div>

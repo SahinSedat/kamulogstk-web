@@ -14,11 +14,16 @@ const publicRoutes = [
     '/giris',
     '/kayit',
     '/sifremi-unuttum',
+    // Auth API endpoints (login, register, OTP, logout)
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
+    '/api/auth/send-otp',
+    '/api/auth/verify-otp',
+    '/api/auth/me',
     '/api/giris',
     '/api/kayit',
+    '/uyegirisi', // Mobil uygulama indirme sayfası
     // Landing page routes
     '/hakkimizda',
     '/iletisim',
@@ -27,8 +32,10 @@ const publicRoutes = [
     '/kullanim-sartlari',
     '/kvkk',
     '/fiyatlandirma',
+    '/api/public', // Public API endpoints (STK başvuru vb.)
+    '/api/dev', // Geliştirme endpoint'leri (seeder vb.)
+    '/api/locations', // Lokasyon arama (public)
 ]
-
 // Admin-only routes
 const adminRoutes = ['/admin', '/api/admin']
 
@@ -65,8 +72,32 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
     }
 
-    // Allow public routes
+    // Redirect legacy citizen portal routes to landing page
+    if (pathname.startsWith('/vatandas/') && pathname.length > 9) {
+        return NextResponse.redirect(new URL('/uyegirisi', request.url))
+    }
+
+    // Allow public routes but redirect logged-in users away from login/register
     if (isPublicRoute(pathname)) {
+        if (pathname === '/giris' || pathname === '/kayit') {
+            const token = request.cookies.get(COOKIE_NAME)?.value
+            if (token) {
+                try {
+                    const { payload } = await jwtVerify(token, JWT_SECRET)
+                    const userRole = payload.role as string
+
+                    if (userRole === 'ADMIN') {
+                        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+                    } else if (userRole === 'STK_MANAGER' || userRole === 'BRANCH_MANAGER') {
+                        return NextResponse.redirect(new URL('/stk/uyeler', request.url))
+                    } else {
+                        return NextResponse.redirect(new URL('/', request.url))
+                    }
+                } catch {
+                    // Invalid token, allow access to login/register (will be cleared later)
+                }
+            }
+        }
         return NextResponse.next()
     }
 
@@ -104,7 +135,7 @@ export async function middleware(request: NextRequest) {
 
         // Check STK routes
         if (isSTKRoute(pathname)) {
-            if (userRole !== 'STK_MANAGER' && userRole !== 'ADMIN') {
+            if (userRole !== 'STK_MANAGER' && userRole !== 'BRANCH_MANAGER' && userRole !== 'ADMIN') {
                 if (pathname.startsWith('/api/')) {
                     return NextResponse.json(
                         { error: 'Bu işlem için yetkiniz yok', code: 'FORBIDDEN' },

@@ -15,11 +15,17 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Find user
-        const user = await prisma.user.findUnique({
-            where: { email },
-            include: { stk: { select: { id: true, status: true } } }
-        })
+        // Find user (STK include opsiyonel — tablo yoksa düz user çek)
+        let user;
+        try {
+            user = await prisma.user.findUnique({
+                where: { email },
+                include: { stk: { select: { id: true, status: true } } }
+            })
+        } catch {
+            // STK tablosu yoksa fallback
+            user = await prisma.user.findUnique({ where: { email } })
+        }
 
         if (!user) {
             return NextResponse.json(
@@ -37,16 +43,23 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Create JWT token
+        // Create JWT token (stk ilişkisi opsiyonel)
+        const stkId = (user as Record<string, unknown>).stk
+            ? ((user as Record<string, unknown>).stk as Record<string, string>)?.id
+            : undefined
         const token = await createToken({
             userId: user.id,
             email: user.email,
             role: user.role,
-            stkId: user.stk?.id
+            stkId
         })
 
-        // Log the login
-        await logUserLogin(user.id, user.email, user.name)
+        // Log the login (hata olursa login'i engellemez)
+        try {
+            await logUserLogin(user.id, user.email, user.name || "Bilinmeyen")
+        } catch {
+            console.warn('[LOGIN] Audit log yazılamadı, devam ediliyor')
+        }
 
         // Create response with cookie
         const response = NextResponse.json({
@@ -63,7 +76,7 @@ export async function POST(request: NextRequest) {
         // Set auth cookie
         response.cookies.set('auth-token', token, {
             httpOnly: true,
-            secure: true, // HTTPS enabled
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: '/'

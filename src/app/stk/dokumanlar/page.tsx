@@ -1,5 +1,6 @@
 'use client'
 
+import { generateEstablishmentPetition } from '@/lib/pdf-generator'
 import React, { useState, useEffect } from 'react'
 import {
     FolderOpen,
@@ -55,6 +56,9 @@ export default function DokumanlarPage() {
         file: null as File | null
     })
 
+    const [stkData, setStkData] = useState<any>(null)
+    const [profileError, setProfileError] = useState(false)
+
     const fetchDocuments = async () => {
         try {
             const res = await fetch('/api/stk/dokumanlar')
@@ -70,8 +74,32 @@ export default function DokumanlarPage() {
         }
     }
 
+    const fetchSTKProfile = async () => {
+        try {
+            const res = await fetch('/api/stk/profile')
+
+            if (res.status === 401) {
+                // Session expired or invalid
+                console.log('Session expired, redirecting to login...')
+                window.location.href = '/giris'
+                return
+            }
+
+            const data = await res.json()
+            if (data.success) {
+                setStkData(data.stk)
+            } else {
+                setProfileError(true)
+            }
+        } catch (error) {
+            console.error('STK Profile error:', error)
+            setProfileError(true)
+        }
+    }
+
     useEffect(() => {
         fetchDocuments()
+        fetchSTKProfile()
     }, [])
 
     const openUploadModal = () => {
@@ -191,16 +219,36 @@ export default function DokumanlarPage() {
                     <FolderOpen className="w-8 h-8 text-purple-600" />
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Dokümanlar</h1>
-                        <p className="text-gray-500">PDF dosyalarını yükleyin ve üyelerinize paylaşın</p>
+                        <p className="text-gray-500">PDF dosyalarını yükleyin ve resmi evrak oluşturun</p>
                     </div>
                 </div>
-                <button
-                    onClick={openUploadModal}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                    <Upload className="w-4 h-4" />
-                    PDF Yükle
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => stkData && generateEstablishmentPetition(stkData)}
+                        disabled={!stkData}
+                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${stkData
+                                ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        title={stkData ? "Kuruluş Bildirimi vb. resmi formları indir" : profileError ? "Bağlantı hatası. Sayfayı yenileyin." : "STK verileri yükleniyor..."}
+                    >
+                        {stkData ? (
+                            <FileText className="w-4 h-4 ml-2" />
+                        ) : profileError ? (
+                            <Info className="w-4 h-4 ml-2 text-red-500" />
+                        ) : (
+                            <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                        )}
+                        {profileError ? 'Veri Alınamadı' : 'Resmi Evrak Oluştur'}
+                    </button>
+                    <button
+                        onClick={openUploadModal}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    >
+                        <Upload className="w-4 h-4" />
+                        PDF Yükle
+                    </button>
+                </div>
             </div>
 
             {/* Stats */}

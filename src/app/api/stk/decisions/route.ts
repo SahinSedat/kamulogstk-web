@@ -19,28 +19,54 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url)
-        const page = parseInt(searchParams.get('page') || '1')
-        const limit = parseInt(searchParams.get('limit') || '20')
+        const status = searchParams.get('status')
 
-        const where = { stkId: stk.id }
+        const where: any = { stkId: stk.id }
 
-        const [decisions, total] = await Promise.all([
-            prisma.boardDecision.findMany({
-                where,
-                orderBy: { decisionDate: 'desc' },
-                skip: (page - 1) * limit,
-                take: limit
-            }),
-            prisma.boardDecision.count({ where })
-        ])
+        if (status && status !== 'ALL') {
+            where.status = status
+        } else {
+            // User requested that ALL (default) should not include drafts
+            where.status = { not: 'DRAFT' }
+        }
+
+        // Count before query
+        const count = await prisma.boardDecision.count({ where })
+
+
+        const decisions = await prisma.boardDecision.findMany({
+            where,
+            include: {
+                relatedMembers: {
+                    include: {
+                        member: {
+                            select: {
+                                id: true,
+                                name: true,
+                                surname: true,
+                                memberNumber: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { decisionDate: 'desc' }
+        })
+
+        // Global stats calculation
+        const draftCount = await prisma.boardDecision.count({
+            where: { stkId: stk.id, status: 'DRAFT' }
+        })
+        const finalizedCount = await prisma.boardDecision.count({
+            where: { stkId: stk.id, status: 'FINALIZED' }
+        })
 
         return NextResponse.json({
             decisions,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit)
+            stats: {
+                total: finalizedCount, // User requested total not to include drafts
+                draft: draftCount,
+                finalized: finalizedCount
             }
         })
     } catch (error) {
@@ -66,7 +92,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { decisionNumber, decisionDate, subject, description } = body
+        const { decisionNumber, decisionDate, subject, content, description } = body
 
         if (!decisionNumber || !decisionDate || !subject) {
             return NextResponse.json(
@@ -98,7 +124,9 @@ export async function POST(request: NextRequest) {
                 decisionNumber,
                 decisionDate: new Date(decisionDate),
                 subject,
-                description
+                content: content || null,
+                description: description || null,
+                createdBy: user.id
             }
         })
 

@@ -1,44 +1,93 @@
 "use client"
 
-import React, { useState } from 'react'
-import Link from 'next/link'
+import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
+
+type Step = 'method' | 'input' | 'otp'
+type Method = 'whatsapp' | 'email'
 
 export default function LoginPage() {
     const router = useRouter()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [showPassword, setShowPassword] = useState(false)
+    const [step, setStep] = useState<Step>('method')
+    const [method, setMethod] = useState<Method>('whatsapp')
+    const [identifier, setIdentifier] = useState('')
+    const [otp, setOtp] = useState(['', '', '', '', '', ''])
+    const [userId, setUserId] = useState('')
+    const [maskedContact, setMaskedContact] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [countdown, setCountdown] = useState(0)
+    const otpRefs = useRef<(HTMLInputElement | null)[]>([])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    // Countdown timer
+    useEffect(() => {
+        if (countdown <= 0) return
+        const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+        return () => clearTimeout(timer)
+    }, [countdown])
+
+    // OTP input handler
+    const handleOtpChange = (index: number, value: string) => {
+        if (value.length > 1) value = value.slice(-1)
+        if (!/^\d*$/.test(value)) return
+
+        const newOtp = [...otp]
+        newOtp[index] = value
+        setOtp(newOtp)
+
+        if (value && index < 5) {
+            otpRefs.current[index + 1]?.focus()
+        }
+    }
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+            otpRefs.current[index - 1]?.focus()
+        }
+    }
+
+    // Paste handler for OTP
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
+        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+        if (pasted.length === 6) {
+            setOtp(pasted.split(''))
+            otpRefs.current[5]?.focus()
+        }
+    }
+
+    // Step 1: Select method
+    const selectMethod = (m: Method) => {
+        setMethod(m)
+        setStep('input')
+        setError('')
+    }
+
+    // Step 2: Send OTP
+    const sendOTP = async () => {
+        if (!identifier.trim()) {
+            setError(method === 'whatsapp' ? 'Telefon numarası gerekli' : 'E-posta adresi gerekli')
+            return
+        }
         setLoading(true)
         setError('')
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const res = await fetch('/api/auth/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ identifier: identifier.trim(), method }),
             })
-
-            const data = await response.json()
+            const data = await res.json()
 
             if (data.success) {
-                // Redirect based on role
-                if (data.user.role === 'ADMIN') {
-                    router.push('/admin/anasayfa')
-                } else {
-                    router.push('/stk/anasayfa')
-                }
+                setUserId(data.userId)
+                setMaskedContact(data.maskedContact)
+                setStep('otp')
+                setCountdown(60)
+                setOtp(['', '', '', '', '', ''])
+                setTimeout(() => otpRefs.current[0]?.focus(), 100)
             } else {
-                setError(data.error || 'Giriş başarısız')
+                setError(data.error || 'Kod gönderilemedi')
             }
         } catch {
             setError('Bağlantı hatası. Lütfen tekrar deneyin.')
@@ -47,105 +96,221 @@ export default function LoginPage() {
         }
     }
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-            {/* Background Effects */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full blur-[128px] opacity-30" />
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full blur-[128px] opacity-30" />
-            </div>
+    // Step 3: Verify OTP
+    const verifyOTP = async () => {
+        const code = otp.join('')
+        if (code.length !== 6) {
+            setError('6 haneli doğrulama kodunu girin')
+            return
+        }
+        setLoading(true)
+        setError('')
 
-            <Card className="relative w-full max-w-md bg-white/10 backdrop-blur-xl border-white/20">
-                <CardHeader className="text-center">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
-                        <Building2 className="w-8 h-8 text-white" />
+        try {
+            const res = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, code }),
+            })
+            const data = await res.json()
+
+            if (data.success) {
+                if (data.user.role === 'ADMIN') {
+                    router.push('/admin/dashboard')
+                } else {
+                    router.push('/stk/uyeler')
+                }
+            } else {
+                setError(data.error || 'Doğrulama başarısız')
+                setOtp(['', '', '', '', '', ''])
+                otpRefs.current[0]?.focus()
+            }
+        } catch {
+            setError('Bağlantı hatası. Lütfen tekrar deneyin.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Auto-verify when all 6 digits are entered
+    useEffect(() => {
+        if (step === 'otp' && otp.every(d => d !== '') && !loading) {
+            verifyOTP()
+        }
+    }, [otp, step])
+
+    return (
+        <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0a0e1a 100%)' }}>
+
+            {/* Header */}
+            <header className="border-b border-white/5 backdrop-blur-2xl" style={{ background: 'rgba(10,14,26,0.85)' }}>
+                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <a href="/" className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                            <span className="text-white text-lg font-bold">K</span>
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-white leading-none">KamulogSTK</h1>
+                            <p className="text-[10px] text-slate-500 leading-none mt-0.5">STK Yönetim Platformu</p>
+                        </div>
+                    </a>
+                </div>
+            </header>
+
+            {/* Main */}
+            <main className="flex-grow flex items-center justify-center px-4 py-20">
+                <div className="w-full max-w-md">
+                    {/* Logo Badge */}
+                    <div className="text-center mb-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6"
+                            style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            🛡️ Güvenli Giriş
+                        </div>
+                        <h1 className="text-3xl font-bold text-white mb-2">STK Paneline Giriş</h1>
+                        <p className="text-slate-400">
+                            {step === 'method' && 'Doğrulama yönteminizi seçin'}
+                            {step === 'input' && (method === 'whatsapp' ? 'Kayıtlı telefon numaranızı girin' : 'Kayıtlı e-posta adresinizi girin')}
+                            {step === 'otp' && 'Doğrulama kodunuzu girin'}
+                        </p>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-white">KamulogSTK</CardTitle>
-                    <CardDescription className="text-slate-300">
-                        Hesabınıza giriş yapın
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+
+                    {/* Card */}
+                    <div className="rounded-2xl p-8 border border-white/10 backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.05)' }}>
+
                         {error && (
-                            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
-                                {error}
+                            <div className="mb-6 p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
+                                ⚠️ {error}
                             </div>
                         )}
 
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-slate-300">E-posta</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="ornek@email.com"
-                                    className="w-full h-11 pl-10 pr-4 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                                    required
-                                />
-                            </div>
-                        </div>
+                        {/* Step 1: Method Selection */}
+                        {step === 'method' && (
+                            <div className="space-y-4">
+                                <button onClick={() => selectMethod('whatsapp')}
+                                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(37, 211, 102, 0.15)' }}>
+                                        💬
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-white font-medium group-hover:text-emerald-400 transition-colors">WhatsApp ile Giriş</p>
+                                        <p className="text-slate-500 text-sm">Kayıtlı numaranıza kod gönderilecek</p>
+                                    </div>
+                                    <span className="ml-auto text-slate-600 group-hover:text-emerald-400 transition-colors">→</span>
+                                </button>
 
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-slate-300">Şifre</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full h-11 pl-10 pr-12 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                <button onClick={() => selectMethod('email')}
+                                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+                                        📧
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-white font-medium group-hover:text-blue-400 transition-colors">E-posta ile Giriş</p>
+                                        <p className="text-slate-500 text-sm">Kayıtlı adresinize kod gönderilecek</p>
+                                    </div>
+                                    <span className="ml-auto text-slate-600 group-hover:text-blue-400 transition-colors">→</span>
+                                </button>
+
+                                <div className="mt-6 p-3 rounded-lg text-xs text-center" style={{ background: 'rgba(148, 163, 184, 0.1)', color: '#94a3b8' }}>
+                                    🔒 Sadece admin tarafından yetkilendirilmiş STK yöneticileri giriş yapabilir.
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 2: Input */}
+                        {step === 'input' && (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-slate-300">
+                                        {method === 'whatsapp' ? '📱 Telefon Numarası' : '📧 E-posta Adresi'}
+                                    </label>
+                                    <input
+                                        type={method === 'whatsapp' ? 'tel' : 'email'}
+                                        value={identifier}
+                                        onChange={(e) => setIdentifier(e.target.value)}
+                                        placeholder={method === 'whatsapp' ? '05XX XXX XX XX' : 'ornek@email.com'}
+                                        className="w-full h-12 px-4 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        onKeyDown={(e) => e.key === 'Enter' && sendOTP()}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <button onClick={sendOTP} disabled={loading}
+                                    className="w-full h-12 rounded-xl text-white font-medium transition-all disabled:opacity-50"
+                                    style={{ background: method === 'whatsapp' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+                                    {loading ? '⏳ Gönderiliyor...' : `${method === 'whatsapp' ? '💬' : '📧'} Doğrulama Kodu Gönder`}
+                                </button>
+
+                                <button onClick={() => { setStep('method'); setError(''); setIdentifier('') }}
+                                    className="w-full text-sm text-slate-500 hover:text-slate-300 transition-colors">
+                                    ← Farklı yöntem seç
                                 </button>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="flex items-center justify-between text-sm">
-                            <label className="flex items-center gap-2 text-slate-300">
-                                <input type="checkbox" className="rounded border-white/20 bg-white/10" />
-                                Beni hatırla
-                            </label>
-                            <Link href="/sifremi-unuttum" className="text-purple-400 hover:text-purple-300">
-                                Şifremi unuttum
-                            </Link>
-                        </div>
+                        {/* Step 3: OTP */}
+                        {step === 'otp' && (
+                            <div className="space-y-6">
+                                <div className="text-center">
+                                    <p className="text-slate-400 text-sm">
+                                        {method === 'whatsapp' ? '💬 WhatsApp' : '📧 E-posta'} ile gönderildi
+                                    </p>
+                                    <p className="text-emerald-400 font-medium mt-1">{maskedContact}</p>
+                                </div>
 
-                        <Button
-                            type="submit"
-                            className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Giriş yapılıyor...
-                                </>
-                            ) : (
-                                'Giriş Yap'
-                            )}
-                        </Button>
-                    </form>
+                                {/* OTP Input */}
+                                <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+                                    {otp.map((digit, i) => (
+                                        <input
+                                            key={i}
+                                            ref={(el) => { otpRefs.current[i] = el }}
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                                            className="w-12 h-14 text-center text-xl font-bold text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                                            style={{
+                                                background: digit ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                                                border: digit ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                            }}
+                                        />
+                                    ))}
+                                </div>
 
-                    <div className="mt-6 text-center">
-                        <p className="text-slate-400 text-sm">
-                            Henüz hesabınız yok mu?{' '}
-                            <Link href="/kayit" className="text-purple-400 hover:text-purple-300 font-medium">
-                                STK Başvurusu Yap
-                            </Link>
-                        </p>
+                                <button onClick={verifyOTP} disabled={loading || otp.some(d => !d)}
+                                    className="w-full h-12 rounded-xl text-white font-medium transition-all disabled:opacity-50"
+                                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                                    {loading ? '⏳ Doğrulanıyor...' : '✅ Giriş Yap'}
+                                </button>
+
+                                {/* Resend */}
+                                <div className="text-center">
+                                    {countdown > 0 ? (
+                                        <p className="text-slate-500 text-sm">Yeni kod gönderebilmek için {countdown}s bekleyin</p>
+                                    ) : (
+                                        <button onClick={() => { setOtp(['', '', '', '', '', '']); sendOTP() }}
+                                            className="text-emerald-400 text-sm hover:text-emerald-300 transition-colors">
+                                            🔄 Yeni kod gönder
+                                        </button>
+                                    )}
+                                </div>
+
+                                <button onClick={() => { setStep('input'); setError(''); setOtp(['', '', '', '', '', '']) }}
+                                    className="w-full text-sm text-slate-500 hover:text-slate-300 transition-colors">
+                                    ← Geri
+                                </button>
+                            </div>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
+
+                    {/* Footer info */}
+                    <p className="text-center text-slate-600 text-xs mt-6">
+                        © 2026 KamulogSTK — Tüm hakları saklıdır.
+                    </p>
+                </div>
+            </main>
         </div>
     )
 }

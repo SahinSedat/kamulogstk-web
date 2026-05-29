@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
     Building2, Users, FileText, Upload, Calendar, MapPin,
-    Phone, Mail, Globe, Hash, Save, Check, AlertCircle
+    Phone, Mail, Globe, Hash, Save, Check, AlertCircle, Camera, Loader2
 } from 'lucide-react'
 
 interface BoardMember {
@@ -35,6 +35,7 @@ interface STKProfile {
     postalCode: string | null
     foundedAt: string | null
     description: string | null
+    logo: string | null
     statuteFile: string | null
     statuteUploadedAt: string | null
     boardMembers: BoardMember[]
@@ -58,9 +59,49 @@ export default function AssociationPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [uploading, setUploading] = useState(false)
+    const [logoUploading, setLogoUploading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [editMode, setEditMode] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const logoInputRef = useRef<HTMLInputElement>(null)
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        if (!file.type.startsWith('image/')) {
+            alert('Sadece resim dosyaları kabul edilir')
+            return
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Dosya boyutu 5MB\'dan küçük olmalıdır')
+            return
+        }
+
+        setLogoUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const res = await fetch('/api/stk/association/logo', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                setStk(prev => prev ? { ...prev, logo: data.logo } : null)
+            } else {
+                alert('Logo yüklenemedi')
+            }
+        } catch (error) {
+            console.error('Logo upload error:', error)
+            alert('Bir hata oluştu')
+        } finally {
+            setLogoUploading(false)
+        }
+    }
 
     const [formData, setFormData] = useState({
         name: '',
@@ -176,9 +217,45 @@ export default function AssociationPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dernek Profili</h1>
-                    <p className="text-slate-500 mt-1">Kurumsal bilgilerinizi yönetin</p>
+                <div className="flex items-center gap-4">
+                    <div className="relative group">
+                        <input
+                            type="file"
+                            ref={logoInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                        />
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                            {stk.logo ? (
+                                <img src={stk.logo} alt="Dernek Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                stk.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                            )}
+                        </div>
+                        <button
+                            onClick={() => logoInputRef.current?.click()}
+                            disabled={logoUploading}
+                            className="absolute inset-0 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                            {logoUploading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <Camera className="w-5 h-5" />
+                            )}
+                        </button>
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{stk.name}</h1>
+                            <Badge variant={stk.status === 'ACTIVE' ? 'success' : 'default'}>
+                                {stk.status === 'ACTIVE' ? 'Aktif' : stk.status === 'APPROVED' ? 'Onaylı' : stk.status}
+                            </Badge>
+                        </div>
+                        <p className="text-slate-500 mt-1">
+                            {stk.type === 'DERNEK' ? 'Dernek' : stk.type === 'VAKIF' ? 'Vakıf' : stk.type} · Kurumsal bilgilerinizi yönetin
+                        </p>
+                    </div>
                 </div>
                 {success && (
                     <Badge variant="success" className="gap-1">
@@ -199,7 +276,10 @@ export default function AssociationPage() {
                             <p className="text-sm text-slate-500">Kuruluş</p>
                             <p className="font-semibold">
                                 {stk.foundedAt
-                                    ? new Date(stk.foundedAt).toLocaleDateString('tr-TR')
+                                    ? new Date(stk.foundedAt).toLocaleDateString('tr-TR', {
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                    }).replace('.', '/')
                                     : 'Belirtilmemiş'}
                             </p>
                         </div>
@@ -457,7 +537,7 @@ export default function AssociationPage() {
                             <Users className="w-5 h-5" />
                             Yönetim Kurulu ({stk.boardMembers.length})
                         </CardTitle>
-                        <Button variant="outline" onClick={() => window.location.href = '/stk/board'}>
+                        <Button variant="outline" onClick={() => window.location.href = '/stk/yonetim-kurulu'}>
                             Detaylı Yönet
                         </Button>
                     </div>

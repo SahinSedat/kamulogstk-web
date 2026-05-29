@@ -115,6 +115,28 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // Send merged notification to attendee with accept/reject capability
+        if (member.userId) {
+            const assemblyTypeName = assembly.assemblyType === 'OLAGAN' ? 'Olağan' : 'Olağanüstü'
+            const assemblyDate = new Date(assembly.assemblyDate).toLocaleDateString('tr-TR')
+
+            await prisma.notification.create({
+                data: {
+                    userId: member.userId,
+                    title: 'Genel Kurul Katılım Daveti',
+                    message: `${assemblyTypeName} Genel Kurula katılımcı olarak eklenmiş bulunmaktasınız ve ${assemblyDate} tarihinde ${assembly.location} adresinde yapılacaktır.`,
+                    type: 'assembly_attendance',
+                    link: `/uyegirisi`,
+                    isRead: false,
+                    metadata: {
+                        assemblyId: assembly.id,
+                        attendeeId: attendee.id,
+                        assemblyNumber: assembly.assemblyNumber
+                    }
+                }
+            })
+        }
+
         return NextResponse.json({ success: true, attendee })
     } catch (error) {
         console.error('Error adding attendee:', error)
@@ -122,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PUT: Katılımcı güncelle (imza durumu vb.)
+// PUT: Katılımcı güncelle (imza durumu, onay/ret vb.)
 export async function PUT(request: NextRequest) {
     try {
         const cookieStore = await cookies()
@@ -138,7 +160,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { id, signature, attendType } = body
+        const { id, signature, attendType, status, rejectionReason } = body
 
         if (!id) {
             return NextResponse.json({ error: 'Katılımcı ID gerekli' }, { status: 400 })
@@ -147,21 +169,84 @@ export async function PUT(request: NextRequest) {
         // Katılımcının bu STK'ya ait genel kurulda olduğunu doğrula
         const attendee = await prisma.assemblyAttendee.findFirst({
             where: { id },
-            include: { assembly: true }
+            include: {
+                assembly: true,
+            }
         })
 
         if (!attendee || attendee.assembly.stkId !== payload.stkId) {
             return NextResponse.json({ error: 'Katılımcı bulunamadı' }, { status: 404 })
         }
 
+        // Fetch member manually to ensure we have user info for notification
+        const member = await prisma.member.findUnique({
+            where: { id: attendee.memberId },
+            select: {
+                name: true,
+                surname: true,
+                userId: true
+            }
+        })
+
+        // Also add the member to the attendee object for downstream logic using 'attendee.member'
+        const attendeeWithMember = { ...attendee, member }
+
         const updateData: Record<string, unknown> = {}
         if (signature !== undefined) updateData.signature = signature
         if (attendType) updateData.attendType = attendType
+        if (status) {
+            updateData.status = status
+            updateData.respondedAt = new Date()
+        }
+        if (rejectionReason !== undefined) updateData.rejectionReason = rejectionReason
 
         const updated = await prisma.assemblyAttendee.update({
             where: { id },
             data: updateData
         })
+
+        // Eğer status değiştirilmişse (onay/ret cevapı verilmişse) → STK yöneticisine bildirim gönder
+        if (status && member) {
+            const assemblyTypeName = attendee.assembly.assemblyType === 'OLAGAN' ? 'Olağan' : 'Olağanüstü'
+            let notificationMessage = ''
+            let notificationTitle = ''
+
+            if (status === 'ACCEPTED') {
+                notificationTitle = 'Genel Kurul Katılımı Onaylandı'
+                notificationMessage = `${member.name} ${member.surname} - ${assemblyTypeName} Genel Kurul katılımını onaylamıştır.`
+            } else if (status === 'REJECTED') {
+                notificationTitle = 'Genel Kurul Katılımı Reddedildi'
+                notificationMessage = `${member.name} ${member.surname} - ${assemblyTypeName} Genel Kurul katılımını reddetmiştir.${rejectionReason ? ` Nedeni: ${rejectionReason}` : ''
+                    }`
+            }
+
+            if (notificationMessage && notificationTitle) {
+                // STK founder/manager bulup bildirim gönder
+                const stk = await prisma.sTK.findUnique({
+                    where: { id: payload.stkId },
+                    select: { managerId: true }
+                })
+
+                if (stk && stk.managerId) {
+                    await prisma.notification.create({
+                        data: {
+                            userId: stk.managerId,
+                            title: notificationTitle,
+                            message: notificationMessage,
+                            type: 'assembly_attendance_response',
+                            link: `/stk/genel-kurul/${attendee.assembly.id}`,
+                            isRead: false,
+                            metadata: {
+                                assemblyId: attendee.assembly.id,
+                                attendeeId: id,
+                                memberId: attendee.memberId,
+                                responseStatus: status
+                            }
+                        }
+                    })
+                }
+            }
+        }
 
         return NextResponse.json({ success: true, attendee: updated })
     } catch (error) {

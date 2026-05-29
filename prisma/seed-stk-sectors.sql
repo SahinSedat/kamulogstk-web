@@ -1,0 +1,30 @@
+-- Insert comprehensive sectors for STK activities
+INSERT INTO "Sector" (id, name, code, description, "createdAt", "updatedAt")
+VALUES
+    ('sec_edu_res', 'Eğitim ve Araştırma', 'EDU_RES', 'Eğitim, bilimsel araştırma ve geliştirme faaliyetleri', NOW(), NOW()),
+    ('sec_health_soc', 'Sağlık ve Sosyal Hizmetler', 'HEA_SOC', 'Sağlık hizmetleri, hasta hakları ve sosyal hizmetler', NOW(), NOW()),
+    ('sec_social_aid', 'Sosyal Yardım ve Dayanışma', 'SOC_AID', 'Yoksullukla mücadele, gıda ve giyim yardımları', NOW(), NOW()),
+    ('sec_cult_art', 'Kültür, Sanat ve Turizm', 'CUL_ART', 'Kültürel miras, sanat ve turizm tanıtım faaliyetleri', NOW(), NOW()),
+    ('sec_sports', 'Spor ve Rekreasyon', 'SPO_REC', 'Amatör sporlar, fiziksel aktiviteler ve kulüpler', NOW(), NOW()),
+    ('sec_youth_child', 'Gençlik ve Çocuk', 'YOU_CHI', 'Gençlerin ve çocukların gelişimine yönelik faaliyetler', NOW(), NOW()),
+    ('sec_women', 'Kadın Hakları ve Güçlendirme', 'WOM_EMP', 'Kadın hakları, toplumsal cinsiyet eşitliği ve istihdam', NOW(), NOW()),
+    ('sec_dis_eld', 'Engelli ve Yaşlı Hakları', 'DIS_ELD', 'Engellilerin ve yaşlıların yaşam kalitesini artırma', NOW(), NOW()),
+    ('sec_animals', 'Hayvan Hakları ve Koruma', 'ANI_PRO', 'Sokak hayvanları, vahşi yaşam ve hayvan hakları', NOW(), NOW()),
+    ('sec_env_nat', 'Çevre, Doğa ve Sürdürülebilirlik', 'ENV_NAT', 'Doğa koruma, iklim değişikliği ve geri dönüşüm', NOW(), NOW()),
+    ('sec_sci_tech', 'Bilim, Teknoloji ve İnovasyon', 'SCI_TEC', 'Dijitalleşme, Ar-Ge ve teknoloji okuryazarlığı', NOW(), NOW()),
+    ('sec_human_rights', 'İnsan Hakları ve Hukuk', 'HUM_RIG', 'Hukukun üstünlüğü, adalet ve temel haklar', NOW(), NOW()),
+    ('sec_econ_bus', 'Ekonomi, Ticaret ve İş Dünyası', 'ECO_BUS', 'Girişimcilik, esnaf ve ticaret odası faaliyetleri', NOW(), NOW()),
+    ('sec_huma_emergency', 'İnsani Yardım ve Acil Durum', 'HUM_EME', 'Afet yardımı, insani destek ve arama kurtarma', NOW(), NOW()),
+    ('sec_rel_edu', 'Dini Hizmetler ve Eğitim', 'REL_EDU', 'Cami, kuran kursu ve dini içerikli vakıf faaliyetleri', NOW(), NOW()),
+    ('sec_village_home', 'Köy, Kasaba ve Hemşehri Dernekleri', 'VIL_HOM', 'Hemşehri yardımlaşması ve köy dernekleri', NOW(), NOW()),
+    ('sec_prof_aid', 'Mesleki Dayanışma ve Yardımlaşma', 'PRO_AID', 'Mesleki etik, dayanışma ve hak arama', NOW(), NOW()),
+    ('sec_urban_arch', 'Şehircilik, Mimari ve Restorasyon', 'URB_ARC', 'Tarihi binalar, şehir estetiği ve mimari', NOW(), NOW()),
+    ('sec_think_tank', 'Fikir ve Düşünce Kuruluşları', 'THI_TAN', 'Politika analizi, stratejik araştırmalar', NOW(), NOW()),
+    ('sec_intl_rel', 'Uluslararası İlişkiler ve İşbirliği', 'INT_REL', 'Sınır ötesi işbirlikleri ve barış elçiliği', NOW(), NOW()),
+    ('sec_cons_rights', 'Tüketici Hakları', 'CON_RIG', 'Tüketici bilinci ve hak savunuculuğu', NOW(), NOW()),
+    ('sec_media_comm', 'Medya ve İletişim', 'MED_COM', 'Bağımsız medya, gazeteciler ve iletişim', NOW(), NOW()),
+    ('sec_pol_admin', 'Politika ve Kamu Yönetimi', 'POL_ADM', 'Demokrasi, şeffaflık ve kamu denetçiliği', NOW(), NOW()),
+    ('sec_disaster_search', 'Afet Yönetimi ve Arama Kurtarma', 'DIS_SEA', 'Deprem hazırlığı, acil müdahale ekipleri', NOW(), NOW()),
+    ('sec_social_ent', 'Sosyal Girişimcilik', 'SOC_ENT', 'Sosyal fayda odaklı iş modelleri', NOW(), NOW()),
+    ('sec_local_dev', 'Yerel Kalkınma', 'LOC_DEV', 'Bölgesel ekonomik ve sosyal gelişim', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;

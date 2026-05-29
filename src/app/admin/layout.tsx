@@ -19,6 +19,8 @@ import {
     Search,
     User,
     Globe,
+    Users,
+    CreditCard,
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -42,6 +44,16 @@ const sidebarItems = [
         icon: Building2,
     },
     {
+        title: 'Tüm Üyeler',
+        href: '/admin/uyeler',
+        icon: Users,
+    },
+    {
+        title: 'Ödemeler',
+        href: '/admin/odemeler',
+        icon: CreditCard,
+    },
+    {
         title: 'Paket Planları',
         href: '/admin/paketler',
         icon: Package,
@@ -55,11 +67,6 @@ const sidebarItems = [
         title: 'Domain Talepleri',
         href: '/admin/domain-talepleri',
         icon: Globe,
-    },
-    {
-        title: 'Roller & Yetkiler',
-        href: '/admin/roles',
-        icon: Shield,
     },
     {
         title: 'Ayarlar',

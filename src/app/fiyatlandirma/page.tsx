@@ -100,8 +100,8 @@ export default function PricingPage() {
                                 <div
                                     key={plan.name}
                                     className={`relative rounded-2xl p-8 ${plan.popular
-                                            ? 'bg-gradient-to-b from-emerald-500/20 to-teal-500/10 border-2 border-emerald-500/50'
-                                            : 'bg-white/5 border border-white/10'
+                                        ? 'bg-gradient-to-b from-emerald-500/20 to-teal-500/10 border-2 border-emerald-500/50'
+                                        : 'bg-white/5 border border-white/10'
                                         }`}
                                 >
                                     {plan.popular && (
@@ -134,15 +134,10 @@ export default function PricingPage() {
                                         ))}
                                     </ul>
 
-                                    <Link href="/kayit">
-                                        <Button
-                                            className={`w-full h-12 ${plan.popular
-                                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
-                                                    : 'bg-white/10 hover:bg-white/20'
-                                                }`}
-                                        >
-                                            {plan.cta}
-                                        </Button>
+                                    <Link href="/iletisim">
+                                        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2 bg-transparent hover:border-slate-400 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 h-10 px-4 py-2 border-white/20 text-white hover:bg-white/10 w-full md:w-auto">
+                                            İletişime Geçin
+                                        </button>
                                     </Link>
                                 </div>
                             ))}
@@ -172,7 +167,7 @@ export default function PricingPage() {
                             <p className="text-slate-400 mb-6">
                                 Fiyatlandırma veya özellikler hakkında sorularınız için bize ulaşın.
                             </p>
-                            <Link href="/contact">
+                            <Link href="/iletisim">
                                 <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
                                     İletişime Geçin
                                 </Button>

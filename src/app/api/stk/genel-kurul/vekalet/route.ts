@@ -128,6 +128,28 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // Send notification to receiver
+        const receiver = members.find(m => m.id === receiverId)
+        const giver = members.find(m => m.id === giverId)
+
+        if (receiver?.userId) {
+            await prisma.notification.create({
+                data: {
+                    userId: receiver.userId,
+                    title: 'Vekalet Ataması',
+                    message: `${giver?.name} ${giver?.surname} tarafından adınıza vekalet verildi. Yönetim onayı bekleniyor.`,
+                    type: 'proxy_request',
+                    link: `/vatandas`,
+                    isRead: false,
+                    metadata: {
+                        proxyId: proxy.id,
+                        assemblyId,
+                        giverName: `${giver?.name} ${giver?.surname}`
+                    }
+                }
+            })
+        }
+
         return NextResponse.json({ success: true, proxy })
     } catch (error) {
         console.error('Error creating proxy:', error)
@@ -175,6 +197,50 @@ export async function PUT(request: NextRequest) {
                 approvedAt: isApproved ? new Date() : null
             }
         })
+
+        // Send notifications if approved
+        if (isApproved) {
+            const [giver, receiver] = await Promise.all([
+                prisma.member.findUnique({ where: { id: proxy.giverId } }),
+                prisma.member.findUnique({ where: { id: proxy.receiverId } })
+            ])
+
+            const notificationPromises = []
+
+            if (giver?.userId) {
+                notificationPromises.push(
+                    prisma.notification.create({
+                        data: {
+                            userId: giver.userId,
+                            title: 'Vekalet Onaylandı',
+                            message: `Vekalet talebiniz ${receiver?.name} ${receiver?.surname} için onaylanmıştır.`,
+                            type: 'general_assembly',
+                            link: `/uyegirisi`,
+                            isRead: false
+                        }
+                    })
+                )
+            }
+
+            if (receiver?.userId) {
+                notificationPromises.push(
+                    prisma.notification.create({
+                        data: {
+                            userId: receiver.userId,
+                            title: 'Vekalet Almışsınız',
+                            message: `${giver?.name} ${giver?.surname} adlı üyeden vekalet almışsınız.`,
+                            type: 'general_assembly',
+                            link: `/uyegirisi`,
+                            isRead: false
+                        }
+                    })
+                )
+            }
+
+            if (notificationPromises.length > 0) {
+                await Promise.all(notificationPromises)
+            }
+        }
 
         return NextResponse.json({ success: true, proxy: updated })
     } catch (error) {

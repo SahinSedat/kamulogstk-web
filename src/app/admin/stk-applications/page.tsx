@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,9 +33,12 @@ import {
     Phone,
     Mail,
     Globe,
-    FileText,
+    Users,
     ChevronLeft,
     ChevronRight,
+    Loader2,
+    Shield,
+    UserCircle,
 } from 'lucide-react'
 
 // Types
@@ -46,76 +49,48 @@ interface STKApplication {
     email: string
     phone: string
     city: string
-    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    district?: string
+    address?: string
+    status: string
     createdAt: string
     registrationNumber?: string
+    taxNumber?: string
     website?: string
     description?: string
-    documents?: string[]
+    manager?: {
+        id: string
+        name: string
+        email: string
+        phone: string
+        registrationPurpose?: string
+    }
+    stats?: {
+        totalMembers: number
+        activeMembers: number
+    }
+    boardMembers?: {
+        id: string
+        name: string
+        position: string
+        startDate: string
+    }[]
+    stksectors?: {
+        sector: { name: string }
+    }[]
+    packageInfo?: {
+        name: string
+        price: number
+        currency: string
+    } | null
 }
 
-// Mock data
-const mockApplications: STKApplication[] = [
-    {
-        id: '1',
-        name: 'Türkiye Eğitim Vakfı',
-        type: 'VAKIF',
-        email: 'info@tev.org.tr',
-        phone: '0212 555 1234',
-        city: 'İstanbul',
-        status: 'PENDING',
-        createdAt: '2024-01-10T10:30:00',
-        registrationNumber: 'VKF-2024-001',
-        website: 'https://tev.org.tr',
-        description: 'Eğitim alanında faaliyet gösteren vakıf',
-    },
-    {
-        id: '2',
-        name: 'İstanbul Yazılımcılar Derneği',
-        type: 'DERNEK',
-        email: 'iletisim@yazilimcilar.org',
-        phone: '0216 444 5678',
-        city: 'İstanbul',
-        status: 'PENDING',
-        createdAt: '2024-01-09T14:20:00',
-        registrationNumber: 'DRN-2024-015',
-    },
-    {
-        id: '3',
-        name: 'Metal İş Sendikası',
-        type: 'SENDIKA',
-        email: 'info@metalis.org',
-        phone: '0312 333 9999',
-        city: 'Ankara',
-        status: 'PENDING',
-        createdAt: '2024-01-08T09:15:00',
-    },
-    {
-        id: '4',
-        name: 'Ankara Esnaf Kooperatifi',
-        type: 'KOOPERATIF',
-        email: 'bilgi@ankaraesnaf.coop',
-        phone: '0312 222 8888',
-        city: 'Ankara',
-        status: 'APPROVED',
-        createdAt: '2024-01-05T11:00:00',
-    },
-    {
-        id: '5',
-        name: 'Reddedilen Örnek STK',
-        type: 'DERNEK',
-        email: 'test@example.com',
-        phone: '0555 111 2222',
-        city: 'İzmir',
-        status: 'REJECTED',
-        createdAt: '2024-01-03T16:45:00',
-    },
-]
-
-const statusConfig: Record<STKApplication['status'], { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
+const statusConfig: Record<string, { label: string; variant: 'warning' | 'success' | 'destructive' | 'default' | 'outline' }> = {
     PENDING: { label: 'Beklemede', variant: 'warning' },
     APPROVED: { label: 'Onaylandı', variant: 'success' },
     REJECTED: { label: 'Reddedildi', variant: 'destructive' },
+    ACTIVE: { label: 'Aktif', variant: 'success' },
+    SUSPENDED: { label: 'Askıya Alındı', variant: 'destructive' },
+    INACTIVE: { label: 'Pasif', variant: 'default' },
 }
 
 const typeLabels: Record<string, string> = {
@@ -127,8 +102,18 @@ const typeLabels: Record<string, string> = {
     DIGER: 'Diğer',
 }
 
+const positionLabels: Record<string, string> = {
+    PRESIDENT: 'Başkan',
+    VICE_PRESIDENT: 'Başkan Yardımcısı',
+    SECRETARY: 'Genel Sekreter',
+    TREASURER: 'Sayman',
+    MEMBER: 'Üye',
+    AUDITOR: 'Denetçi',
+}
+
 export default function STKApplicationsPage() {
-    const [applications, setApplications] = useState<STKApplication[]>(mockApplications)
+    const [applications, setApplications] = useState<STKApplication[]>([])
+    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -136,45 +121,97 @@ export default function STKApplicationsPage() {
     const [showApproveDialog, setShowApproveDialog] = useState(false)
     const [showRejectDialog, setShowRejectDialog] = useState(false)
     const [rejectReason, setRejectReason] = useState('')
+    const [actionLoading, setActionLoading] = useState(false)
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [total, setTotal] = useState(0)
 
-    // Filter applications
-    const filteredApplications = applications.filter((app) => {
-        const matchesSearch =
-            app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            app.city.toLowerCase().includes(searchQuery.toLowerCase())
+    // Fetch applications
+    const fetchApplications = useCallback(async () => {
+        setLoading(true)
+        try {
+            const params = new URLSearchParams()
+            if (searchQuery) params.set('search', searchQuery)
+            if (typeFilter !== 'all') params.set('type', typeFilter)
+            params.set('page', page.toString())
 
-        const matchesStatus = statusFilter === 'all' || app.status === statusFilter
-        const matchesType = typeFilter === 'all' || app.type === typeFilter
+            const res = await fetch(`/api/admin/stks?${params.toString()}`)
+            const data = await res.json()
 
-        return matchesSearch && matchesStatus && matchesType
-    })
+            if (data.success) {
+                // statusFilter'ı frontend'de uygula (API city destekliyor ama status filter'ı yok)
+                let filtered = data.stks
+                if (statusFilter !== 'all') {
+                    filtered = filtered.filter((s: STKApplication) => s.status === statusFilter)
+                }
+                setApplications(filtered)
+                setTotalPages(data.pagination.totalPages)
+                setTotal(data.pagination.total)
+            }
+        } catch (error) {
+            console.error('Başvurular yüklenirken hata:', error)
+        } finally {
+            setLoading(false)
+        }
+    }, [searchQuery, typeFilter, statusFilter, page])
+
+    useEffect(() => {
+        fetchApplications()
+    }, [fetchApplications])
 
     // Handle approve
-    const handleApprove = () => {
-        if (selectedApp) {
-            setApplications((prev) =>
-                prev.map((app) =>
-                    app.id === selectedApp.id ? { ...app, status: 'APPROVED' as const } : app
-                )
-            )
-            setShowApproveDialog(false)
-            setSelectedApp(null)
+    const handleApprove = async () => {
+        if (!selectedApp) return
+        setActionLoading(true)
+        try {
+            const res = await fetch('/api/admin/stks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: selectedApp.id, status: 'APPROVED' })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setShowApproveDialog(false)
+                setSelectedApp(null)
+                fetchApplications()
+            }
+        } catch (error) {
+            console.error('Onaylama hatası:', error)
+        } finally {
+            setActionLoading(false)
         }
     }
 
     // Handle reject
-    const handleReject = () => {
-        if (selectedApp && rejectReason) {
-            setApplications((prev) =>
-                prev.map((app) =>
-                    app.id === selectedApp.id ? { ...app, status: 'REJECTED' as const } : app
-                )
-            )
-            setShowRejectDialog(false)
-            setSelectedApp(null)
-            setRejectReason('')
+    const handleReject = async () => {
+        if (!selectedApp || !rejectReason) return
+        setActionLoading(true)
+        try {
+            const res = await fetch('/api/admin/stks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: selectedApp.id, status: 'REJECTED' })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setShowRejectDialog(false)
+                setSelectedApp(null)
+                setRejectReason('')
+                fetchApplications()
+            }
+        } catch (error) {
+            console.error('Reddetme hatası:', error)
+        } finally {
+            setActionLoading(false)
         }
+    }
+
+    // Stats
+    const stats = {
+        total: total,
+        pending: applications.filter(a => a.status === 'PENDING').length,
+        approved: applications.filter(a => a.status === 'APPROVED' || a.status === 'ACTIVE').length,
+        rejected: applications.filter(a => a.status === 'REJECTED').length,
     }
 
     return (
@@ -185,10 +222,62 @@ export default function STKApplicationsPage() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">STK Başvuruları</h1>
                     <p className="text-slate-500 mt-1">Gelen STK başvurularını yönetin</p>
                 </div>
-                <Button variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Dışa Aktar
-                </Button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                                <p className="text-xs text-slate-500">Toplam Başvuru</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
+                                <p className="text-xs text-slate-500">Beklemede</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                                <Check className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-emerald-600">{stats.approved}</p>
+                                <p className="text-xs text-slate-500">Onaylanan</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                                <X className="w-5 h-5 text-red-600" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                                <p className="text-xs text-slate-500">Reddedilen</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filters */}
@@ -198,13 +287,13 @@ export default function STKApplicationsPage() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                             <Input
-                                placeholder="STK adı, e-posta veya şehir ara..."
+                                placeholder="STK adı, tescil no veya vergi no ara..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
                                 className="pl-10"
                             />
                         </div>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
                             <SelectTrigger className="w-[180px]">
                                 <Filter className="w-4 h-4 mr-2" />
                                 <SelectValue placeholder="Durum Filtresi" />
@@ -213,10 +302,13 @@ export default function STKApplicationsPage() {
                                 <SelectItem value="all">Tüm Durumlar</SelectItem>
                                 <SelectItem value="PENDING">Beklemede</SelectItem>
                                 <SelectItem value="APPROVED">Onaylandı</SelectItem>
+                                <SelectItem value="ACTIVE">Aktif</SelectItem>
                                 <SelectItem value="REJECTED">Reddedildi</SelectItem>
+                                <SelectItem value="SUSPENDED">Askıya Alındı</SelectItem>
+                                <SelectItem value="INACTIVE">Pasif</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1) }}>
                             <SelectTrigger className="w-[180px]">
                                 <Building2 className="w-4 h-4 mr-2" />
                                 <SelectValue placeholder="Tür Filtresi" />
@@ -237,177 +329,325 @@ export default function STKApplicationsPage() {
             {/* Applications Table */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Başvuru Listesi ({filteredApplications.length})</CardTitle>
+                    <CardTitle>Başvuru Listesi ({applications.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-700">
-                                    <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">STK</th>
-                                    <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">Tür</th>
-                                    <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">Şehir</th>
-                                    <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">Tarih</th>
-                                    <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">Durum</th>
-                                    <th className="text-right py-4 px-4 font-semibold text-slate-600 dark:text-slate-300">İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredApplications.map((app) => (
-                                    <tr
-                                        key={app.id}
-                                        className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                                    >
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                                                    <Building2 className="w-5 h-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">{app.name}</p>
-                                                    <p className="text-sm text-slate-500">{app.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <Badge variant="outline">{typeLabels[app.type]}</Badge>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                                                <MapPin className="w-4 h-4" />
-                                                {app.city}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                                                <Calendar className="w-4 h-4" />
-                                                {new Date(app.createdAt).toLocaleDateString('tr-TR')}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <Badge variant={statusConfig[app.status].variant}>
-                                                {statusConfig[app.status].label}
-                                            </Badge>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => setSelectedApp(app)}
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </Button>
-                                                {app.status === 'PENDING' && (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="success"
-                                                            onClick={() => {
-                                                                setSelectedApp(app)
-                                                                setShowApproveDialog(true)
-                                                            }}
-                                                        >
-                                                            <Check className="w-4 h-4" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() => {
-                                                                setSelectedApp(app)
-                                                                setShowRejectDialog(true)
-                                                            }}
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                            <span className="ml-3 text-slate-500">Yükleniyor...</span>
+                        </div>
+                    ) : applications.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-500">Başvuru bulunamadı</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">STK</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Tür</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Yönetici</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Şehir</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Üye Sayısı</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Tarih</th>
+                                        <th className="text-left py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">Durum</th>
+                                        <th className="text-right py-4 px-4 font-semibold text-slate-600 dark:text-slate-300 text-sm">İşlemler</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {applications.map((app) => (
+                                        <tr
+                                            key={app.id}
+                                            className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                        >
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                                                        <Building2 className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-slate-900 dark:text-white">{app.name}</p>
+                                                        <p className="text-xs text-slate-500">{app.email}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <Badge variant="outline">{typeLabels[app.type] || app.type}</Badge>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                {app.manager ? (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-slate-900 dark:text-white">{app.manager.name}</p>
+                                                        <p className="text-xs text-slate-500">{app.manager.email}</p>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 text-sm">-</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {app.city}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm">
+                                                    <Users className="w-3 h-3" />
+                                                    {app.stats?.activeMembers || 0}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm">
+                                                    <Calendar className="w-3 h-3" />
+                                                    {new Date(app.createdAt).toLocaleDateString('tr-TR')}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <Badge variant={statusConfig[app.status]?.variant || 'default'}>
+                                                    {statusConfig[app.status]?.label || app.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => setSelectedApp(app)}
+                                                        title="Detay"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    {app.status === 'PENDING' && (
+                                                        <>
+                                                            <Button
+                                                                size="sm"
+                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                                onClick={() => {
+                                                                    setSelectedApp(app)
+                                                                    setShowApproveDialog(true)
+                                                                }}
+                                                                title="Onayla"
+                                                            >
+                                                                <Check className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() => {
+                                                                    setSelectedApp(app)
+                                                                    setShowRejectDialog(true)
+                                                                }}
+                                                                title="Reddet"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {/* Pagination */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                        <p className="text-sm text-slate-500">
-                            Toplam {filteredApplications.length} başvuru gösteriliyor
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" disabled>
-                                <ChevronLeft className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="bg-blue-600 text-white border-blue-600">
-                                1
-                            </Button>
-                            <Button variant="outline" size="sm">
-                                2
-                            </Button>
-                            <Button variant="outline" size="sm">
-                                <ChevronRight className="w-4 h-4" />
-                            </Button>
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-sm text-slate-500">
+                                Sayfa {page} / {totalPages} (Toplam {total} kayıt)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage(p => p - 1)}
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+                                    <Button
+                                        key={p}
+                                        variant="outline"
+                                        size="sm"
+                                        className={page === p ? 'bg-blue-600 text-white border-blue-600' : ''}
+                                        onClick={() => setPage(p)}
+                                    >
+                                        {p}
+                                    </Button>
+                                ))}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage(p => p + 1)}
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
 
             {/* Detail Dialog */}
             <Dialog open={!!selectedApp && !showApproveDialog && !showRejectDialog} onOpenChange={() => setSelectedApp(null)}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                                 <Building2 className="w-6 h-6 text-white" />
                             </div>
-                            {selectedApp?.name}
+                            <div>
+                                <span>{selectedApp?.name}</span>
+                                <div className="mt-1">
+                                    <Badge variant={statusConfig[selectedApp?.status || 'PENDING']?.variant || 'default'}>
+                                        {statusConfig[selectedApp?.status || 'PENDING']?.label}
+                                    </Badge>
+                                </div>
+                            </div>
                         </DialogTitle>
                         <DialogDescription>STK başvuru detayları</DialogDescription>
                     </DialogHeader>
                     {selectedApp && (
-                        <div className="grid grid-cols-2 gap-6 py-4">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium text-slate-500">Tür</label>
-                                    <p className="text-slate-900 dark:text-white mt-1">{typeLabels[selectedApp.type]}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-slate-500">Kayıt No</label>
-                                    <p className="text-slate-900 dark:text-white mt-1">{selectedApp.registrationNumber || '-'}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedApp.email}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedApp.phone}</span>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedApp.city}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Globe className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedApp.website || '-'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-slate-400" />
-                                    <span>Başvuru: {new Date(selectedApp.createdAt).toLocaleDateString('tr-TR')}</span>
-                                </div>
-                                <div>
-                                    <Badge variant={statusConfig[selectedApp.status].variant}>
-                                        {statusConfig[selectedApp.status].label}
-                                    </Badge>
+                        <div className="space-y-6 py-4">
+                            {/* Temel Bilgiler */}
+                            <div>
+                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                    <Building2 className="w-4 h-4" /> Kurum Bilgileri
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-500">Tür</label>
+                                        <p className="text-sm text-slate-900 dark:text-white mt-0.5">{typeLabels[selectedApp.type] || selectedApp.type}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-500">Tescil No</label>
+                                        <p className="text-sm text-slate-900 dark:text-white mt-0.5">{selectedApp.registrationNumber || '-'}</p>
+                                    </div>
+                                    {selectedApp.taxNumber && (
+                                        <div>
+                                            <label className="text-xs font-medium text-slate-500">Vergi No</label>
+                                            <p className="text-sm text-slate-900 dark:text-white mt-0.5">{selectedApp.taxNumber}</p>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-500">Başvuru Tarihi</label>
+                                        <p className="text-sm text-slate-900 dark:text-white mt-0.5">{new Date(selectedApp.createdAt).toLocaleDateString('tr-TR')}</p>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* İletişim */}
+                            <div>
+                                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                    <Mail className="w-4 h-4" /> İletişim Bilgileri
+                                </h4>
+                                <div className="space-y-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Mail className="w-4 h-4 text-slate-400" />
+                                        <span className="text-slate-900 dark:text-white">{selectedApp.email}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Phone className="w-4 h-4 text-slate-400" />
+                                        <span className="text-slate-900 dark:text-white">{selectedApp.phone}</span>
+                                    </div>
+                                    {selectedApp.website && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Globe className="w-4 h-4 text-slate-400" />
+                                            <span className="text-slate-900 dark:text-white">{selectedApp.website}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <MapPin className="w-4 h-4 text-slate-400" />
+                                        <span className="text-slate-900 dark:text-white">
+                                            {selectedApp.city}{selectedApp.district ? ` / ${selectedApp.district}` : ''}
+                                        </span>
+                                    </div>
+                                    {selectedApp.address && (
+                                        <p className="text-xs text-slate-500 pl-6">{selectedApp.address}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Yönetici */}
+                            {selectedApp.manager && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                        <UserCircle className="w-4 h-4" /> Yönetici Bilgileri
+                                    </h4>
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                                <span className="text-sm font-bold text-blue-600">
+                                                    {selectedApp.manager.name?.charAt(0) || '?'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedApp.manager.name}</p>
+                                                <p className="text-xs text-slate-500">{selectedApp.manager.email}</p>
+                                            </div>
+                                        </div>
+                                        {selectedApp.manager.phone && (
+                                            <div className="flex items-center gap-2 text-sm pl-11">
+                                                <Phone className="w-3 h-3 text-slate-400" />
+                                                <span className="text-slate-600">{selectedApp.manager.phone}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Yönetim Kurulu */}
+                            {selectedApp.boardMembers && selectedApp.boardMembers.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                        <Shield className="w-4 h-4" /> Yönetim Kurulu ({selectedApp.boardMembers.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {selectedApp.boardMembers.map(bm => (
+                                            <div key={bm.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                                                        <span className="text-xs font-bold text-indigo-600">{bm.name?.charAt(0)}</span>
+                                                    </div>
+                                                    <span className="text-sm text-slate-900 dark:text-white">{bm.name}</span>
+                                                </div>
+                                                <Badge variant="outline" className="text-xs">
+                                                    {positionLabels[bm.position] || bm.position}
+                                                </Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Açıklama */}
                             {selectedApp.description && (
-                                <div className="col-span-2">
-                                    <label className="text-sm font-medium text-slate-500">Açıklama</label>
-                                    <p className="text-slate-900 dark:text-white mt-1">{selectedApp.description}</p>
+                                <div>
+                                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Açıklama</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                                        {selectedApp.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* İstatistikler */}
+                            {selectedApp.stats && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                                        <p className="text-lg font-bold text-blue-600">{selectedApp.stats.totalMembers}</p>
+                                        <p className="text-xs text-slate-500">Toplam Üye</p>
+                                    </div>
+                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
+                                        <p className="text-lg font-bold text-emerald-600">{selectedApp.stats.activeMembers}</p>
+                                        <p className="text-xs text-slate-500">Aktif Üye</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -417,18 +657,14 @@ export default function STKApplicationsPage() {
                             <>
                                 <Button
                                     variant="destructive"
-                                    onClick={() => {
-                                        setShowRejectDialog(true)
-                                    }}
+                                    onClick={() => setShowRejectDialog(true)}
                                 >
                                     <X className="w-4 h-4 mr-2" />
                                     Reddet
                                 </Button>
                                 <Button
-                                    variant="success"
-                                    onClick={() => {
-                                        setShowApproveDialog(true)
-                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={() => setShowApproveDialog(true)}
                                 >
                                     <Check className="w-4 h-4 mr-2" />
                                     Onayla
@@ -450,11 +686,11 @@ export default function STKApplicationsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
+                        <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={actionLoading}>
                             İptal
                         </Button>
-                        <Button variant="success" onClick={handleApprove}>
-                            <Check className="w-4 h-4 mr-2" />
+                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleApprove} disabled={actionLoading}>
+                            {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
                             Onayla
                         </Button>
                     </DialogFooter>
@@ -472,18 +708,17 @@ export default function STKApplicationsPage() {
                     </DialogHeader>
                     <div className="py-4">
                         <Input
-                            label="Ret Gerekçesi"
                             placeholder="Reddetme nedeninizi yazın..."
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                         />
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+                        <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={actionLoading}>
                             İptal
                         </Button>
-                        <Button variant="destructive" onClick={handleReject} disabled={!rejectReason}>
-                            <X className="w-4 h-4 mr-2" />
+                        <Button variant="destructive" onClick={handleReject} disabled={!rejectReason || actionLoading}>
+                            {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <X className="w-4 h-4 mr-2" />}
                             Reddet
                         </Button>
                     </DialogFooter>

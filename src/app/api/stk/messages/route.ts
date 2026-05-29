@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
         const activeMembers = await prisma.member.findMany({
             where: recipientQuery,
-            select: { id: true, phone: true, email: true }
+            select: { id: true, phone: true, email: true, userId: true }
         })
 
         // Kampanya oluştur
@@ -142,6 +142,26 @@ export async function POST(request: NextRequest) {
                 stkId: stk.id
             }
         })
+
+        // Send system notification to members if it's not a draft
+        if (!scheduledAt && activeMembers.length > 0) {
+            // Filter members who have a user account
+            const membersWithUser = activeMembers.filter(m => m.userId)
+
+            if (membersWithUser.length > 0) {
+                await prisma.notification.createMany({
+                    data: membersWithUser.map(m => ({
+                        userId: m.userId!,
+                        title: 'Yeni Duyuru/Mesaj',
+                        message: `${stk.name || 'STK'} size yeni bir mesaj gönderdi: ${title}`,
+                        type: 'info',
+                        link: `/uyegirisi`,
+                        isRead: false,
+                        metadata: { campaignId: campaign.id }
+                    }))
+                })
+            }
+        }
 
         return NextResponse.json({ success: true, campaign }, { status: 201 })
     } catch (error) {

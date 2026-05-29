@@ -1,298 +1,517 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
-    Settings, Bell, Lock, CreditCard, Globe,
-    Moon, Sun, Save, CheckCircle2, Mail, Smartphone
+    Settings, Bell, Lock, Palette, Mail, Globe, Save, X,
+    Eye, EyeOff, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function STKSettingsPage() {
-    const [notifications, setNotifications] = useState({
-        email: true,
-        sms: false,
-        newMember: true,
-        payment: true,
-        reminder: true,
+export default function SettingsPage() {
+    const [activeTab, setActiveTab] = useState('general')
+    const [isSaving, setIsSaving] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [formData, setFormData] = useState({
+        // Genel Ayarlar
+        stkName: '',
+        stkEmail: '',
+        stkPhone: '',
+        taxNumber: '',
+        website: '',
+        address: '',
+        city: '',
+        district: '',
+        managerName: '',
+        managerPhone: '',
+        
+        // Bildirim Ayarları
+        emailNotifications: true,
+        smsNotifications: false,
+        systemNotifications: true,
+        
+        // Güvenlik Ayarları
+        twoFactorAuth: false,
+        sessionTimeout: '30',
+        
+        // Görünüm Ayarları
+        theme: 'auto',
+        language: 'tr',
     })
 
-    const [saved, setSaved] = useState(false)
-    const [theme, setTheme] = useState<'light' | 'dark'>('light')
-
-    // Tema yükle
+    // Veritabanından ayarları yükle
     useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-        if (savedTheme) {
-            setTheme(savedTheme)
-            applyTheme(savedTheme)
-        } else {
-            // Sistem tercihini kontrol et
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-            const defaultTheme = prefersDark ? 'dark' : 'light'
-            setTheme(defaultTheme)
-            applyTheme(defaultTheme)
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/stk/settings')
+                const data = await res.json()
+                
+                if (data.success && data.settings) {
+                    setFormData(prev => ({
+                        ...prev,
+                        ...data.settings
+                    }))
+                } else {
+                    setError(data.error || 'Ayarlar yüklenemedi')
+                }
+            } catch (err) {
+                console.error('Error fetching settings:', err)
+                setError('Ayarlar yüklenirken hata oluştu')
+            } finally {
+                setIsLoading(false)
+            }
         }
+
+        fetchSettings()
     }, [])
 
-    const applyTheme = (newTheme: 'light' | 'dark') => {
-        if (newTheme === 'dark') {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target
+        const checked = (e.target as HTMLInputElement).checked
+        
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }))
+    }
+
+    const handleSave = async () => {
+        setIsSaving(true)
+        setError(null)
+        try {
+            const res = await fetch('/api/stk/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert('Ayarlar başarıyla kaydedildi!')
+            } else {
+                setError(data.error || 'Bir hata oluştu')
+                alert(data.error || 'Ayarlar kaydedilemedi')
+            }
+        } catch (error) {
+            console.error('Error saving settings:', error)
+            setError('Ayarlar kaydedilirken hata oluştu')
+            alert('Bir hata oluştu')
+        } finally {
+            setIsSaving(false)
         }
     }
 
-    const handleThemeChange = (newTheme: 'light' | 'dark') => {
-        setTheme(newTheme)
-        localStorage.setItem('theme', newTheme)
-        applyTheme(newTheme)
-    }
-
-    const handleSave = () => {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
-    }
+    const tabs = [
+        { id: 'general', label: 'Genel', icon: Settings },
+        { id: 'notifications', label: 'Bildirimler', icon: Bell },
+        { id: 'security', label: 'Güvenlik', icon: Lock },
+        { id: 'appearance', label: 'Görünüm', icon: Palette },
+    ]
 
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Ayarlar</h1>
-                    <p className="text-slate-500">Platform ayarlarınızı özelleştirin</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Ayarlar</h1>
+                    <p className="text-slate-500 mt-1">STK ayarlarınızı yönetin</p>
                 </div>
-                <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
-                    {saved ? (
-                        <>
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Kaydedildi
-                        </>
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4 mr-2" />
-                            Kaydet
-                        </>
-                    )}
-                </Button>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-                {/* Main Settings */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Notifications */}
-                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <Bell className="w-5 h-5" />
-                                Bildirim Ayarları
-                            </CardTitle>
-                            <CardDescription>Hangi bildirimleri almak istediğinizi seçin</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <Mail className="w-5 h-5 text-slate-400" />
+            {/* Error Message */}
+            {error && (
+                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p className="text-red-700 dark:text-red-400">{error}</p>
+                </div>
+            )}
+
+            {/* Loading */}
+            {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                </div>
+            ) : (
+                <>
+                    {/* Tabs */}
+                    <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+                        <button
+                            onClick={() => setActiveTab('general')}
+                            className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+                                activeTab === 'general'
+                                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Settings className="w-4 h-4" />
+                            Genel
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('notifications')}
+                            className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+                                activeTab === 'notifications'
+                                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Bell className="w-4 h-4" />
+                            Bildirimler
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('security')}
+                            className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+                                activeTab === 'security'
+                                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Lock className="w-4 h-4" />
+                            Güvenlik
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('appearance')}
+                            className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+                                activeTab === 'appearance'
+                                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Palette className="w-4 h-4" />
+                            Görünüm
+                        </button>
+                    </div>
+
+                    {/* Genel Ayarlar */}
+                    {activeTab === 'general' && (
+                        <Card className="dark:bg-slate-800 dark:border-slate-700">
+                            <CardHeader>
+                                <CardTitle className="dark:text-white">Genel Ayarlar</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <div className="font-medium text-slate-900 dark:text-white">E-posta Bildirimleri</div>
-                                        <div className="text-sm text-slate-500 dark:text-slate-400">Önemli güncellemeleri e-posta ile alın</div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            STK Adı
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="stkName"
+                                            value={formData.stkName}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Vergi Numarası
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="taxNumber"
+                                            value={formData.taxNumber}
+                                            onChange={handleInputChange}
+                                            disabled
+                                            className="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white opacity-50"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Vergi numarası değiştirilemez</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            STK E-postası
+                                        </label>
+                                        <input
+                                            type="email"
+                                            name="stkEmail"
+                                            value={formData.stkEmail}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Telefon Numarası
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            name="stkPhone"
+                                            value={formData.stkPhone}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Website
+                                        </label>
+                                        <input
+                                            type="url"
+                                            name="website"
+                                            value={formData.website}
+                                            onChange={handleInputChange}
+                                            placeholder="https://example.com"
+                                            className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                        />
                                     </div>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={notifications.email}
-                                        onChange={(e) => setNotifications({ ...notifications, email: e.target.checked })}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                </label>
-                            </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <Smartphone className="w-5 h-5 text-slate-400" />
-                                    <div>
-                                        <div className="font-medium text-slate-900 dark:text-white">SMS Bildirimleri</div>
-                                        <div className="text-sm text-slate-500 dark:text-slate-400">Acil durumları SMS ile alın</div>
+                                <div className="border-t dark:border-slate-700 pt-6">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Adres Bilgileri</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Adres
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    Şehir
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="city"
+                                                    value={formData.city}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    İlçe
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="district"
+                                                    value={formData.district}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={notifications.sms}
-                                        onChange={(e) => setNotifications({ ...notifications, sms: e.target.checked })}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-slate-300 peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                </label>
-                            </div>
 
-                            <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
-                                <h4 className="font-medium text-slate-900 dark:text-white mb-4">Bildirim Türleri</h4>
-                                <div className="space-y-3">
-                                    {[
-                                        { key: 'newMember', label: 'Yeni üye başvuruları' },
-                                        { key: 'payment', label: 'Ödeme bildirimleri' },
-                                        { key: 'reminder', label: 'Aidat hatırlatmaları' },
-                                    ].map((item) => (
-                                        <label key={item.key} className="flex items-center gap-3 cursor-pointer">
+                                <div className="border-t dark:border-slate-700 pt-6">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Yönetici Bilgileri</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Yönetici Adı
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="managerName"
+                                                value={formData.managerName}
+                                                onChange={handleInputChange}
+                                                disabled
+                                                className="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white opacity-50"
+                                            />
+                                            <p className="text-xs text-slate-500 mt-1">Başkan bilgileri otomatik olarak yüklenir</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Yönetici Telefonu
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                name="managerPhone"
+                                                value={formData.managerPhone}
+                                                onChange={handleInputChange}
+                                                disabled
+                                                className="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white opacity-50"
+                                            />
+                                            <p className="text-xs text-slate-500 mt-1">Başkan bilgileri otomatik olarak yüklenir</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Bildirim Ayarları */}
+                    {activeTab === 'notifications' && (
+                        <Card className="dark:bg-slate-800 dark:border-slate-700">
+                            <CardHeader>
+                                <CardTitle className="dark:text-white">Bildirim Ayarları</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="flex flex-col justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors h-full">
+                                        <div className="flex items-start gap-3 mb-4">
+                                            <Mail className="w-5 h-5 text-slate-600 dark:text-slate-300 mt-1" />
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">E-posta Bildirimleri</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Tüm e-posta bildirimlerini alın</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end">
                                             <input
                                                 type="checkbox"
-                                                checked={notifications[item.key as keyof typeof notifications]}
-                                                onChange={(e) => setNotifications({ ...notifications, [item.key]: e.target.checked })}
-                                                className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                                                name="emailNotifications"
+                                                checked={formData.emailNotifications}
+                                                onChange={handleInputChange}
+                                                className="w-5 h-5 rounded cursor-pointer"
                                             />
-                                            <span className="text-slate-700 dark:text-slate-300">{item.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Security */}
-                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <Lock className="w-5 h-5" />
-                                Güvenlik
-                            </CardTitle>
-                            <CardDescription>Hesap güvenlik ayarlarınızı yönetin</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div>
-                                    <div className="font-medium text-slate-900 dark:text-white">Şifre Değiştir</div>
-                                    <div className="text-sm text-slate-500 dark:text-slate-400">Son değişiklik: 30 gün önce</div>
-                                </div>
-                                <Button variant="outline">Değiştir</Button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div>
-                                    <div className="font-medium text-slate-900 dark:text-white">İki Faktörlü Doğrulama</div>
-                                    <div className="text-sm text-slate-500 dark:text-slate-400">Ek güvenlik katmanı ekleyin</div>
-                                </div>
-                                <Button variant="outline">Etkinleştir</Button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div>
-                                    <div className="font-medium text-slate-900 dark:text-white">Oturum Geçmişi</div>
-                                    <div className="text-sm text-slate-500 dark:text-slate-400">Aktif oturumları görüntüleyin</div>
-                                </div>
-                                <Button variant="outline">Görüntüle</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Payment */}
-                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <CreditCard className="w-5 h-5" />
-                                Ödeme Ayarları
-                            </CardTitle>
-                            <CardDescription>Fatura ve ödeme bilgilerinizi yönetin</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-400 rounded flex items-center justify-center text-white text-xs font-bold">
-                                        VISA
+                                        </div>
                                     </div>
+
+                                    <div className="flex flex-col justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors h-full">
+                                        <div className="flex items-start gap-3 mb-4">
+                                            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300 mt-1" />
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">SMS Bildirimleri</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Acil durumlarda SMS alın</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end">
+                                            <input
+                                                type="checkbox"
+                                                name="smsNotifications"
+                                                checked={formData.smsNotifications}
+                                                onChange={handleInputChange}
+                                                className="w-5 h-5 rounded cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors h-full">
+                                        <div className="flex items-start gap-3 mb-4">
+                                            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300 mt-1" />
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">Sistem Bildirimleri</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Uygulama içi notifications</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end">
+                                            <input
+                                                type="checkbox"
+                                                name="systemNotifications"
+                                                checked={formData.systemNotifications}
+                                                onChange={handleInputChange}
+                                                className="w-5 h-5 rounded cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Güvenlik Ayarları */}
+                    {activeTab === 'security' && (
+                        <Card className="dark:bg-slate-800 dark:border-slate-700">
+                            <CardHeader>
+                                <CardTitle className="dark:text-white">Güvenlik Ayarları</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">
                                     <div>
-                                        <div className="font-medium text-slate-900 dark:text-white">•••• •••• •••• 4242</div>
-                                        <div className="text-sm text-slate-500 dark:text-slate-400">Son kullanma: 12/28</div>
+                                        <p className="font-medium text-slate-900 dark:text-white">İki Faktörlü Kimlik Doğrulama</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">Hesabınızı daha güvenli hale getirin</p>
                                     </div>
+                                    <input
+                                        type="checkbox"
+                                        name="twoFactorAuth"
+                                        checked={formData.twoFactorAuth}
+                                        onChange={handleInputChange}
+                                        className="w-5 h-5 rounded"
+                                    />
                                 </div>
-                                <Button variant="outline">Güncelle</Button>
-                            </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <div>
-                                    <div className="font-medium text-slate-900 dark:text-white">Fatura Adresi</div>
-                                    <div className="text-sm text-slate-500 dark:text-slate-400">İstanbul, Türkiye</div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Oturum Zaman Aşımı (dakika)
+                                    </label>
+                                    <select
+                                        name="sessionTimeout"
+                                        value={formData.sessionTimeout}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                    >
+                                        <option value="15">15 dakika</option>
+                                        <option value="30">30 dakika</option>
+                                        <option value="60">1 saat</option>
+                                        <option value="120">2 saat</option>
+                                    </select>
                                 </div>
-                                <Button variant="outline">Düzenle</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    {/* Appearance */}
-                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <Sun className="w-5 h-5" />
-                                Görünüm
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => handleThemeChange('light')}
-                                    className={`p-4 rounded-lg text-center transition-all ${theme === 'light'
-                                            ? 'bg-white border-2 border-emerald-500 shadow-lg'
-                                            : 'bg-slate-100 dark:bg-slate-700 border-2 border-transparent hover:border-slate-300'
-                                        }`}
-                                >
-                                    <Sun className={`w-6 h-6 mx-auto mb-2 ${theme === 'light' ? 'text-amber-500' : 'text-slate-400'}`} />
-                                    <span className={`text-sm font-medium ${theme === 'light' ? 'text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}>Açık</span>
-                                </button>
-                                <button
-                                    onClick={() => handleThemeChange('dark')}
-                                    className={`p-4 rounded-lg text-center transition-all ${theme === 'dark'
-                                            ? 'bg-slate-800 border-2 border-emerald-500 shadow-lg'
-                                            : 'bg-slate-100 dark:bg-slate-700 border-2 border-transparent hover:border-slate-300'
-                                        }`}
-                                >
-                                    <Moon className={`w-6 h-6 mx-auto mb-2 ${theme === 'dark' ? 'text-blue-400' : 'text-slate-400'}`} />
-                                    <span className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>Koyu</span>
-                                </button>
-                            </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
-                                Tema tercihiniz bu tarayıcıya kaydedilir
-                            </p>
-                        </CardContent>
-                    </Card>
+                    {/* Görünüm Ayarları */}
+                    {activeTab === 'appearance' && (
+                        <Card className="dark:bg-slate-800 dark:border-slate-700">
+                            <CardHeader>
+                                <CardTitle className="dark:text-white">Görünüm Ayarları</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Tema
+                                    </label>
+                                    <select
+                                        name="theme"
+                                        value={formData.theme}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                    >
+                                        <option value="auto">Otomatik</option>
+                                        <option value="light">Açık</option>
+                                        <option value="dark">Koyu</option>
+                                    </select>
+                                </div>
 
-                    {/* Language */}
-                    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <Globe className="w-5 h-5" />
-                                Dil
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <select className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                                <option value="tr">🇹🇷 Türkçe</option>
-                                <option value="en">🇬🇧 English</option>
-                            </select>
-                        </CardContent>
-                    </Card>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Dil
+                                    </label>
+                                    <select
+                                        name="language"
+                                        value={formData.language}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                    >
+                                        <option value="tr">Türkçe</option>
+                                        <option value="en">English</option>
+                                        <option value="de">Deutsch</option>
+                                    </select>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    {/* Danger Zone */}
-                    <Card className="bg-white dark:bg-slate-800 border-red-200 dark:border-red-900/50">
-                        <CardHeader>
-                            <CardTitle className="text-red-600">Tehlikeli Bölge</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                Hesabı Dondur
-                            </Button>
-                            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                Hesabı Sil
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                    {/* Save Button */}
+                    <div className="flex justify-end gap-3">
+                        <Button variant="outline">
+                            <X className="w-4 h-4 mr-2" />
+                            İptal
+                        </Button>
+                        <Button 
+                            onClick={handleSave} 
+                            disabled={isSaving || isLoading}
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                        >
+                            <Save className="w-4 h-4 mr-2" />
+                            {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                        </Button>
+                    </div>
+                </>
+            )}
         </div>
     )
 }
-
