@@ -1,293 +1,175 @@
-# KamulogSTK — STK Yönetim Platformu Tanıtım Prompt'u
+# Kamulog Super App — Web Yönetim Paneli Tanıtım Prompt'u
 
 ## Proje Bağlamı ve Teknoloji Yığını
 
-Bu proje, **KamulogSTK** isimli bağımsız bir **Sivil Toplum Kuruluşları (STK) Yönetim Paneli**dir. Sendika, dernek, vakıf gibi STK'ların üyelik, aidat, yönetim kurulu kararları, genel kurul, belge ve iletişim süreçlerini tek platformdan yönetebildiği **multi-tenant SaaS** mimarisiyle tasarlanmıştır.
+Bu proje, **Kamulog** isimli bir "Super App" platformunun **web tabanlı Admin Yönetim Paneli**dir. Platform, kamu çalışanlarına (memur, işçi, sözleşmeli personel) yönelik kapsamlı hizmetler sunar: becayiş (tayin değişimi), kariyer danışmanlığı, maaş hesaplama, haber/duyuru, toplu iş sözleşmesi (TİS) arşivi ve profesyonel danışmanlık.
 
 **Teknoloji Yığını:**
-- **Framework:** Next.js 16.1.1 (App Router) + React 19
-- **Stil:** Tailwind CSS v4 + Radix UI (shadcn/ui bileşenleri)
-- **Veritabanı & ORM:** PostgreSQL + Prisma 5
-- **Yetkilendirme:** JWT (jose) + Custom middleware — Cookie tabanlı (`auth-token`)
-- **Auth:** NextAuth v5 beta (next-auth@5.0.0-beta.30) + bcryptjs
-- **PDF:** jsPDF + jsPDF-AutoTable (belge üretimi)
-- **Validasyon:** Zod v4
-- **Gerçek Zamanlı:** Socket.io (mesajlaşma)
-- **Harita/Konum:** Google Places API
-- **Icon Seti:** Lucide React + Radix Icons
-- **UI Bileşenleri:** Radix UI (Dialog, Select, Tabs, Toast, Popover, Dropdown, Switch, Checkbox, Avatar, Tooltip, Separator, Label)
-- **Tema:** next-themes (dark/light mode)
+- **Framework:** Next.js 16.1.6 (App Router) + React 19
+- **Stil:** Tailwind CSS v4 + CSS Custom Properties (dark theme)
+- **Veritabanı & ORM:** PostgreSQL + Prisma 6
+- **Yetkilendirme:** NextAuth v4 (`next-auth@4.24.13`) — rol tabanlı (ADMIN, MODERATOR, CONSULTANT, USER)
+- **AI Entegrasyonu:** OpenAI API (kariyer danışmanlığı, CV analizi)
+- **Mesajlaşma:** @whiskeysockets/baileys (WhatsApp entegrasyonu)
+- **Icon Seti:** Lucide React
+- **PDF:** @react-pdf/renderer, pdf-parse
+- **Sunucu:** Ubuntu VPS (91.151.95.75:3100), PM2 ile çalışır
+- **Repo:** GitHub — `SahinSedat/kamulogWebYonetim`
 
 **Dizin Yapısı:**
 ```
 src/
 ├── app/
-│   ├── admin/              ← Platform yönetici (ADMIN) sayfaları
+│   ├── (admin)/          ← Tüm admin sayfaları (layout ile sarılı)
 │   │   ├── dashboard/
-│   │   ├── stk-applications/  ← STK başvuru onay/red
-│   │   ├── stk-management/    ← Aktif STK'ları yönet
-│   │   ├── uyeler/            ← Platform kullanıcıları
-│   │   ├── odemeler/          ← Ödeme takibi
-│   │   ├── packages/          ← Paket yönetimi
-│   │   ├── paketler/          ← Paket tanımları
-│   │   ├── domain-talepleri/  ← Domain/web sitesi talepleri
-│   │   └── logs/              ← Denetim logları
-│   ├── stk/                ← STK yöneticisi (STK_MANAGER) sayfaları
-│   │   ├── anasayfa/          ← Dashboard
-│   │   ├── uyeler/            ← Üye yönetimi
-│   │   ├── basvurular/        ← Üyelik başvuruları
-│   │   ├── istifa-yonetimi/   ← İstifa talepleri
-│   │   ├── yonetim-kurulu/    ← YK üyeleri
-│   │   ├── kararlar/          ← YK kararları
-│   │   ├── genel-kurul/       ← Genel kurul yönetimi
-│   │   ├── odemeler/          ← Aidat/ödeme takibi
-│   │   ├── muhasebe/          ← Muhasebe
-│   │   ├── aidat-planlari/    ← Aidat planları
-│   │   ├── dokumanlar/        ← Belge paylaşımı
-│   │   ├── mesajlar/          ← Üyelere mesaj gönderimi
-│   │   ├── domain-talebi/     ← Domain talebi
-│   │   ├── dernek-profili/    ← STK profil bilgileri
-│   │   ├── profil/            ← Yönetici profili
-│   │   ├── ayarlar/           ← STK ayarları
-│   │   └── analizler/         ← İstihbarat & Analiz
-│   │       ├── pazar-payi/
-│   │       ├── rakipler/
-│   │       ├── bolgesel-harita/
-│   │       └── tahminler/
+│   │   ├── users/        ← Kullanıcı yönetimi (liste + detay [id])
+│   │   ├── consultants/  ← Danışman yönetim modülü (4 sekmeli)
+│   │   ├── content/      ← Haberler/Duyurular + Canlı piyasa verileri
+│   │   ├── becayis/      ← Becayiş (tayin değişimi) ilanları
+│   │   ├── career/       ← Kariyer modülü
+│   │   ├── messages/     ← Mesajlaşma
+│   │   ├── notifications/
+│   │   ├── orders/       ← Siparişler
+│   │   ├── subscriptions/← Abonelik yönetimi
+│   │   ├── tis/          ← TİS (Toplu İş Sözleşmesi) arşivi
+│   │   ├── maas-hesaplama/ ← Maaş hesaplama
+│   │   ├── requests/     ← Talepler
+│   │   ├── stk/          ← STK & Forum
+│   │   ├── logs/         ← Sistem logları
+│   │   └── settings/     ← Ayarlar
 │   ├── api/
-│   │   ├── admin/          ← Admin API'leri
-│   │   ├── auth/           ← Login/Register/Logout/Me
-│   │   ├── stk/            ← STK Manager API'leri
-│   │   ├── public/         ← Herkese açık API'ler
-│   │   └── locations/      ← Konum arama
-│   ├── giris/              ← Login sayfası
-│   ├── kayit/              ← Register sayfası
-│   ├── uyegirisi/          ← Mobil yönlendirme
-│   ├── hakkimizda/         ← Landing: Hakkımızda
-│   ├── iletisim/           ← Landing: İletişim
-│   ├── fiyatlandirma/      ← Landing: Fiyatlandırma
-│   ├── haber/              ← Landing: Haberler
-│   ├── gizlilik-politikasi/
-│   ├── kullanim-sartlari/
-│   └── kvkk/
+│   │   ├── admin/        ← Admin API'leri (news, upload, consultant-management)
+│   │   ├── auth/         ← NextAuth endpoint
+│   │   ├── becayis/      ← Becayiş API
+│   │   ├── consultants/  ← Danışman API
+│   │   ├── conversations/
+│   │   ├── kariyer/      ← Kariyer modülü API
+│   │   ├── market-data/  ← Canlı döviz/BTC/BIST API
+│   │   ├── public/       ← Mobil uygulama için public API'ler
+│   │   ├── users/        ← Kullanıcı CRUD API
+│   │   ├── tis/          ← TİS API
+│   │   └── ...
+│   └── login/
+├── actions/              ← Server Actions (users.ts, consultants.ts)
 ├── components/
-│   ├── layout/             ← Sidebar, Header, Navbar
-│   └── ui/                 ← shadcn/ui bileşenleri
-├── hooks/                  ← Custom React hooks
-├── lib/                    ← Prisma client, utils
-├── types/                  ← TypeScript tipleri
-└── middleware.ts           ← JWT auth + role-based routing
+│   ├── layout/           ← Sidebar.tsx, Header vb.
+│   └── ui/               ← UserActions, ConsultantActions, CreateUserModal vb.
+├── lib/
+│   ├── prisma.ts         ← Prisma client singleton
+│   ├── auth.ts           ← NextAuth config
+│   └── utils.ts          ← Yardımcı fonksiyonlar
+└── prisma/
+    └── schema.prisma     ← 37 model, PostgreSQL
 ```
 
-## Kullanıcı Rolleri ve Yetkilendirme
+## Prisma Veritabanı Modelleri (37 Model)
 
-| Rol | Açıklama | Erişim |
-|-----|----------|--------|
-| `ADMIN` | Platform yöneticisi | `/admin/*`, `/api/admin/*`, tüm rotalar |
-| `STK_MANAGER` | STK kurucu/yöneticisi | `/stk/*`, `/api/stk/*` |
-| `CITIZEN` | Vatandaş (üye adayı) | `/uyegirisi` → mobil yönlendirme |
+**Temel Modeller:**
+- `User` — Kullanıcı (rolle: ADMIN/MODERATOR/CONSULTANT/USER, credits, aiTokens, isPremium, employmentType: isci/memur/sozlesmeli)
+- `Institution` — Kurum bilgileri
+- `BecayisListing` — Becayiş (tayin değişimi) ilanları
 
-**Auth Mekanizması:**
-- JWT token cookie (`auth-token`) ile saklanır
-- Middleware: `jose` ile token doğrulama
-- Header injection: `x-user-id`, `x-user-role`, `x-stk-id`
-- STK API'leri: Header'dan `x-stk-id` alarak multi-tenant filtreleme
+**Danışmanlık Sistemi:**
+- `Consultant` — Danışman profili (category: hukuki/idari/mali/kariyer/psikolojik/diger, sessionFeeJeton, iban, isOnline, isFeatured, rating)
+- `ServicePackage` — Danışman hizmet paketleri
+- `Conversation` — Danışman-kullanıcı sohbetleri
+- `Message` — Sohbet mesajları
+- `Review` — Danışman değerlendirmeleri
+- `ConsultationRequest` — Danışmanlık talepleri
+- `ConsultantApplication` — Danışman başvuruları (pending/approved/rejected)
+- `ConsultantPayout` — Danışman hakediş/ödeme (dönemsel, jeton → TL)
+- `SystemSetting` — Sistem ayarları (jeton_rate, commission_rate)
 
-## Prisma Veritabanı Modelleri (40+ Model)
+**Kariyer Modülü:**
+- `KariyerSubscription`, `CV`, `CVAnalysis`, `ChatSession`, `UsageRecord`
+- `JobListing` — İş ilanları
+- `KariyerConsultant`, `KariyerChatRoom`, `KariyerChatMessage`, `KariyerConsultantRating`
 
-### Kullanıcı & Auth
-- `User` — Platform kullanıcısı (role: ADMIN/STK_MANAGER/CITIZEN, bildirim tercihleri, STK yetkili bilgisi)
-- `Session` — JWT session kaydı (token, userAgent, ipAddress)
+**Finans:**
+- `Order` — Siparişler
+- `SubscriptionPlan`, `Subscription` — Abonelik planları
+- `SalesRecord` — Satış kayıtları
+- `Coupon` — Kuponlar
 
-### STK Kuruluş Yönetimi
-- `STK` — Ana STK kaydı (name, slug, type, status, iletişim, adres, tüzük, managerId→User)
-- `STKApplication` — STK platform başvurusu (belgeler, inceleme notları)
-- `STKSector` — STK-Sektör ilişkisi (many-to-many)
-- `STKRole` — STK içi rol ve yetki tanımları (permissions JSON)
+**İçerik:**
+- `News` — Haberler/Duyurular (CRUD, görsel yükleme, kategori, taslak/yayında)
+- `TISDocument`, `TISFile` — TİS belge arşivi
+- `MediaCategory`, `Media` — Medya yönetimi
+- `Notification` — Bildirimler
+- `AdminLog` — Yönetici işlem logları
+- `WhatsAppLog` — WhatsApp bot logları
+- `CookieConsent`, `SiteSettings`
 
-### Yönetim Kurulu
-- `BoardMember` — YK üyeleri (position: PRESIDENT/VICE_PRESIDENT/SECRETARY/TREASURER/MEMBER/AUDITOR, imza yetkisi)
-- `BoardDecision` — YK kararları (karar no, tarih, konu, belge, status: DRAFT/FINALIZED)
-- `DecisionMember` — Karar-üye ilişkisi (MEMBERSHIP_ACCEPT, RESIGNATION_ACCEPT, EXPULSION, OTHER)
+## Sidebar Menü Yapısı ve Sayfalar
 
-### Üyelik Yönetimi
-- `Member` — STK üyesi (memberNumber, tcKimlik, status, category: ASIL/FAHRI/ONURSAL/KURUMSAL/GENCLIK/GONULLU, kayıt kaynağı, ıslak imza, KVKK)
-- `MembershipApplication` — Üyelik başvurusu (form, belgeler, YK karar bilgisi)
-- `MemberNote` — Yönetici notları (sadece yönetim görür)
-- `ApplicationHistory` — Başvuru geçmişi logları
-- `ResignationHistory` — İstifa geçmişi logları
+| Grup | Sayfa | Yol | Roller |
+|------|-------|-----|--------|
+| GENEL | Dashboard | `/dashboard` | ADMIN, MOD, CONSULTANT |
+| YÖNETİM | Kullanıcılar | `/users` | ADMIN, MOD |
+| YÖNETİM | Danışmanlar | `/consultants` | ADMIN, MOD, CONSULTANT |
+| YÖNETİM | Talepler | `/requests` | ADMIN, MOD, CONSULTANT |
+| İÇERİK | Haberler/Duyurular | `/content` | ADMIN, MOD |
+| İÇERİK | Becayiş | `/becayis` | ADMIN, MOD |
+| İÇERİK | STK & Forum | `/stk` | ADMIN, MOD |
+| İÇERİK | Kariyer | `/career` | ADMIN, MOD |
+| İÇERİK | TİS & Dosyalar | `/tis` | ADMIN, MOD |
+| İLETİŞİM | Mesajlar | `/messages` | ADMIN, MOD, CONSULTANT |
+| İLETİŞİM | Bildirimler | `/notifications` | ADMIN, MOD |
+| FİNANS | Abonelikler | `/subscriptions` | ADMIN |
+| FİNANS | Siparişler | `/orders` | ADMIN, MOD |
+| FİNANS | Maaş Hesaplama | `/maas-hesaplama` | ADMIN, MOD |
+| SİSTEM | Loglar | `/logs` | ADMIN |
+| SİSTEM | Ayarlar | `/settings` | ADMIN |
 
-### Finans & Aidat
-- `Package` — Platform paketleri (aylık/yıllık fiyat, üye limiti, özellikler)
-- `DuesPlan` — Aidat planları (MONTHLY/QUARTERLY/BIANNUAL/YEARLY/CUSTOM, tutar)
-- `DuesDiscount` — Aidat affı/indirimi (FORGIVENESS/DISCOUNT/DEFERMENT)
-- `PaymentAccount` — Ödeme hesapları (BANK_ACCOUNT/IBAN, banka bilgileri)
-- `Payment` — Ödemeler (type: DUES/DONATION/REGISTRATION, status: PENDING/CONFIRMED/REJECTED/CANCELLED/REFUNDED, periyot, makbuz)
+## Modül Detayları
 
-### İletişim & Bildirim
-- `MessageCampaign` — Mesaj kampanyaları (SMS/PUSH/EMAIL, hedef kitle: ALL_ACTIVE/DUES_PAID/DUES_UNPAID/CUSTOM, zamanlanmış gönderim, admin kontrolü)
-- `MessageRecipient` — Kampanya alıcıları (gönderim durumu)
-- `MemberNotification` — Üye bildirimleri (INFO/WARNING/DUES/ANNOUNCEMENT, tekil veya toplu)
-- `Notification` — Sistem bildirimleri
+### 1. Danışman Yönetim Modülü (`/consultants`)
+4 sekmeli (tab) yapıda kapsamlı modül:
+- **Aktif Danışmanlar:** Data table (foto, isim, kategori, jeton ücreti, görüşme sayısı, puan, çevrimiçi toggle, öne çıkar toggle, durum). Yeni danışman ekleme, düzenleme, profil görüntüleme, askıya alma.
+- **Başvurular:** Bekleyen başvuru tablosu, onayla (sisteme ekle) / reddet (sebep ile).
+- **Finans & Muhasebe:** Metrik kartları (toplam jeton, platform geliri, komisyon, ödenecek TL). Hakediş tablosu (dönem seçimi, IBAN, ödeme durumu).
+- **Sistem Ayarları:** Global jeton kuru (1 Jeton = X TL), platform komisyon oranı (%).
 
-### Belge & Doküman
-- `Document` — Paylaşılan belgeler (ANNOUNCEMENT/DOCUMENT/INFORMATION, dosya bilgileri, yayın durumu)
-- `DocumentTemplate` — Belge şablonları (UYEBELGESI/AIDAT_MAKBUZU/IHTAR/GENEL_YAZI/DAVET/VEKALETNAME/TUTANAK)
+**İş Mantığı:** Platform sanal para birimi "Jeton" kullanır. Admin jeton kurunu belirler. Danışmanlar ücretlerini jeton cinsinden belirler. Hakediş = Kazanılan Jeton × Kur − Komisyon.
 
-### Genel Kurul
-- `GeneralAssembly` — Genel kurul (OLAGAN/OLAGANUSTU, tarih, konum, yeter sayı, tutanak)
-- `AssemblyAgendaItem` — Gündem maddeleri
-- `AssemblyAttendee` — Katılımcılar (IN_PERSON/BY_PROXY, onay durumu: PENDING/ACCEPTED/REJECTED)
-- `AssemblyProxy` — Vekaletnameler (veren→alan, belge, onay)
+### 2. Haberler & Duyurular (`/content`)
+- **Canlı Piyasa Verileri:** USD/TRY, EUR/TRY, GBP/TRY, BTC/TRY, BIST 100 (5 dk auto-refresh)
+- **Haber CRUD:** Oluştur/düzenle/sil/yayınla, görsel yükleme, kategori filtreleme
+- **API:** `/api/market-data` (admin), `/api/public/market-data` (mobil)
 
-### İstihbarat & Analiz
-- `Sector` — İş kolları/sektörler (kod, toplam çalışan, kaynak)
-- `SectorRegionalData` — İl bazlı sektör verileri
-- `Competitor` — Rakip STK verileri (anonimleştirilmiş)
-- `MonthlySnapshot` — Aylık istatistik snapshot'ı (üyelik, finansal, il dağılımı)
-- `UserInterest` — Kullanıcı ilgi alanları (User-Sector many-to-many)
+### 3. Kullanıcı Yönetimi (`/users`)
+- Filtreleme: rol, personel tipi, doğrulama, premium
+- Detay sayfası: profil bilgileri, jeton yönetimi, doğrulama toggle, düzenleme
+- Silme: Cascade delete (tüm ilişkili kayıtlar transaction ile)
+- Yeni kullanıcı oluşturma (PBKDF2 hash)
 
-### Domain & Web Sitesi
-- `DomainRequest` — Domain/web sitesi talepleri (status: PENDING/PROCESSING/COMPLETED/CANCELLED)
+### 4. Becayiş İlan Yönetimi (`/becayis`)
+- Kamu çalışanlarının tayin değişimi ilanlarını yönetme
+- Onay/red, durum takibi
 
-### Sistem
-- `AuditLog` — Denetim logları (33 farklı aksiyon, önceki/yeni değerler, IP, user-agent)
-- `Archive` — Yıl bazlı arşivleme (MEMBER/PAYMENT/DECISION/ASSEMBLY/DOCUMENT, snapshot, kilit)
+### 5. Kariyer Modülü (`/career`)
+- AI destekli CV analizi (OpenAI), iş ilanı eşleştirme
+- Kariyer danışmanlığı sohbet sistemi
 
-## API Endpoint'leri
+### 6. TİS Arşivi (`/tis`)
+- Toplu İş Sözleşmesi belgelerini yönetme, PDF depolama
 
-### Auth API'leri
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| `POST` | `/api/auth/login` | Giriş (email+password → JWT cookie) |
-| `POST` | `/api/auth/register` | Kayıt (STK_MANAGER olarak) |
-| `POST` | `/api/auth/logout` | Çıkış (cookie temizle) |
-| `GET` | `/api/auth/me` | Oturum bilgisi |
+## Tasarım Sistemi
 
-### Admin API'leri (`/api/admin/*`)
-| Endpoint | Açıklama |
-|----------|----------|
-| `/api/admin/stks` | STK listesi/onay/red/askıya alma |
-| `/api/admin/users` | Kullanıcı yönetimi |
-| `/api/admin/memberships` | Üyelik yönetimi |
-| `/api/admin/payments` | Ödeme takibi |
-| `/api/admin/packages` | Paket yönetimi |
-| `/api/admin/domain-talepleri` | Domain talepleri |
-
-### STK Manager API'leri (`/api/stk/*`)
-| Endpoint | Açıklama |
-|----------|----------|
-| `/api/stk/association` | STK profil bilgileri (GET/PATCH) |
-| `/api/stk/association/logo` | Logo yükleme |
-| `/api/stk/association/statute` | Tüzük yükleme |
-| `/api/stk/members` | Üye CRUD + filtreleme |
-| `/api/stk/applications` | Üyelik başvuruları |
-| `/api/stk/applications/[id]` | Tekil başvuru işlemleri |
-| `/api/stk/resignations` | İstifa yönetimi |
-| `/api/stk/board-members` | YK üyeleri CRUD |
-| `/api/stk/board-members/[id]` | Tekil YK üyesi |
-| `/api/stk/decisions` | YK kararları CRUD |
-| `/api/stk/decisions/[id]` | Tekil karar |
-| `/api/stk/decisions/[id]/finalize` | Karar kesinleştirme |
-| `/api/stk/decisions/[id]/members` | Karar-üye ilişkilendirme |
-| `/api/stk/decisions/check` | Karar no kontrolü |
-| `/api/stk/dues-plans` | Aidat planları |
-| `/api/stk/genel-kurul` | Genel kurul CRUD |
-| `/api/stk/genel-kurul/katilimci` | Katılımcı yönetimi |
-| `/api/stk/genel-kurul/vekalet` | Vekaletname yönetimi |
-| `/api/stk/dokumanlar` | Belge paylaşımı |
-| `/api/stk/dokumanlar/[id]` | Tekil belge |
-| `/api/stk/domain-talebi` | Domain talebi oluşturma |
-| `/api/stk/messages` | Mesaj kampanyaları |
-| `/api/stk/messages/[id]` | Tekil kampanya |
-| `/api/stk/notifications` | Üye bildirimleri |
-| `/api/stk/profile` | Yönetici profili |
-| `/api/stk/settings` | STK ayarları |
-| `/api/stk/stats` | İstatistikler |
-
-### Public API'leri
-| Endpoint | Açıklama |
-|----------|----------|
-| `/api/public/sectors` | Sektör listesi |
-| `/api/locations/search` | Konum arama (Google Places) |
-
-## STK Yöneticisi Sayfa Yapısı (Sidebar)
-
-| Grup | Sayfa | Yol |
-|------|-------|-----|
-| ANA MENÜ | Ana Sayfa | `/stk/anasayfa` |
-| ÜYELİK | Üyeler | `/stk/uyeler` |
-| ÜYELİK | Başvurular | `/stk/basvurular` |
-| ÜYELİK | İstifa Yönetimi | `/stk/istifa-yonetimi` |
-| YÖNETİM | Yönetim Kurulu | `/stk/yonetim-kurulu` |
-| YÖNETİM | Kararlar | `/stk/kararlar` |
-| YÖNETİM | Genel Kurul | `/stk/genel-kurul` |
-| FİNANS | Ödemeler | `/stk/odemeler` |
-| FİNANS | Muhasebe | `/stk/muhasebe` |
-| FİNANS | Aidat Planları | `/stk/aidat-planlari` |
-| İLETİŞİM | Mesajlar | `/stk/mesajlar` |
-| İLETİŞİM | Dokümanlar | `/stk/dokumanlar` |
-| ANALİZ | Pazar Payı | `/stk/analizler/pazar-payi` |
-| ANALİZ | Rakipler | `/stk/analizler/rakipler` |
-| ANALİZ | Bölgesel Harita | `/stk/analizler/bolgesel-harita` |
-| ANALİZ | Tahminler | `/stk/analizler/tahminler` |
-| AYARLAR | Dernek Profili | `/stk/dernek-profili` |
-| AYARLAR | Domain Talebi | `/stk/domain-talebi` |
-| AYARLAR | Profil | `/stk/profil` |
-| AYARLAR | Ayarlar | `/stk/ayarlar` |
-
-## Admin Panel Sayfa Yapısı
-
-| Sayfa | Yol | Açıklama |
-|-------|-----|----------|
-| Dashboard | `/admin/dashboard` | Platform genel bakış |
-| STK Başvuruları | `/admin/stk-applications` | Onay/red |
-| STK Yönetimi | `/admin/stk-management` | Aktif STK'ları yönet |
-| Üyeler | `/admin/uyeler` | Platform kullanıcıları |
-| Ödemeler | `/admin/odemeler` | Ödeme takibi |
-| Paketler | `/admin/paketler` | Paket tanımları |
-| Domain Talepleri | `/admin/domain-talepleri` | Domain/web sitesi talepleri |
-| Loglar | `/admin/logs` | Denetim logları |
-
-## Environment Değişkenleri
-
-```env
-# Veritabanı
-DATABASE_URL="postgresql://postgres:password@localhost:5432/kamulogstk"
-
-# JWT Secret
-JWT_SECRET="production-secret-key"
-
-# App URL
-NEXT_PUBLIC_APP_URL="https://kamulogstk.net"
-
-# Google Places API (konum arama)
-NEXT_PUBLIC_GOOGLE_PLACES_API_KEY="xxx"
-```
-
-## Üyelik Durum Makinesi
-
-```
-APPLIED → PENDING (YK kararı bekleniyor)
-PENDING → ACTIVE (YK onayı + karar no)
-PENDING → REJECTED (YK reddi + sebep)
-ACTIVE → RESIGNATION_REQ (Üye istifa talebi)
-RESIGNATION_REQ → RESIGNED (YK istifayı onayladı)
-RESIGNATION_REQ → ACTIVE (YK istifayı reddetti)
-ACTIVE → EXPELLED (İhraç)
-ACTIVE → INACTIVE (Pasif)
-ACTIVE → DECEASED (Vefat)
-```
+- **Dark theme** varsayılan, CSS custom properties ile
+- Temel CSS değişkenleri: `--primary`, `--bg-card`, `--bg-sidebar`, `--bg-modal`, `--text`, `--text-secondary`, `--text-muted`, `--border`, `--bg-hover`, `--bg-active`, `--shadow-lg`
+- Hazır CSS sınıfları: `.card`, `.stat-card`, `.glass-card`, `.badge`, `.badge-green`, `.badge-red`, `.badge-blue`, `.badge-yellow`, `.badge-purple`, `.gradient-primary`, `.glow-primary`, `.animate-fade-in`, `.animate-scale-in`
+- Tablolar `<table>` elementleri ile, card yapısında wrapper
+- Modallar: `fixed inset-0 z-50`, `backdrop-blur-sm`, `animate-scale-in`
 
 ## Önemli Kurallar
 
-1. **Multi-tenant:** Her STK kendi verisini görür. `x-stk-id` header'ı middleware tarafından inject edilir.
-2. **Tüm `/stk/*` API'leri** header'dan `x-stk-id` alır, sadece o STK'nın verilerini döner.
-3. **Auth:** JWT cookie tabanlı, `jose` ile verify. NextAuth v5 beta entegre ama custom middleware aktif.
-4. **Prisma:** `@/lib/prisma`'dan singleton import.
-5. **Stil:** Tailwind CSS v4 + Radix UI/shadcn bileşenleri. Dark/light tema `next-themes` ile.
-6. **Dosya yükleme:** Logo, tüzük, imza → `public/uploads/` altına kaydedilir.
-7. **PDF üretimi:** jsPDF + AutoTable ile üyelik belgesi, makbuz, tutanak üretilir.
-8. **AuditLog:** Tüm kritik işlemler (33 aksiyon tipi) loglanır: önceki değer, yeni değer, IP, user-agent.
-9. **Build:** `prisma generate && prisma db push && next build`
-10. **Deploy:** PM2 + Nginx reverse proxy
+1. Tüm sayfalar `src/app/(admin)/` altında, layout ile Sidebar sarılı
+2. API route'lar `src/app/api/` altında, NextAuth session kontrolü ile korunur
+3. Server Actions `src/actions/` altında, `"use server"` directive ile
+4. Client component'ler `"use client"` directive ile
+5. Prisma client `@/lib/prisma`'dan import edilir (singleton)
+6. Stil: Tailwind CSS v4 + `var(--xxx)` CSS değişkenleri birlikte kullanılır
+7. İkonlar: Lucide React kütüphanesinden
+8. Build komutu: `prisma generate && prisma db push && next build`
+9. Deploy: Git push → SSH → `git pull && npm run build && pm2 restart kamulog-panel`

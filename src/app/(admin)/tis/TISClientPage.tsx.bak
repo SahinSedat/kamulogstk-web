@@ -1,0 +1,437 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface TISDoc {
+    id: string; institution: string; role: string; title: string;
+    description: string; fileUrl: string; fileName: string; fileSize: number;
+    isActive: boolean; createdAt: string;
+}
+interface TISFileItem {
+    id: string; role: string; title: string; description: string;
+    fileUrl: string; fileName: string; fileSize: number;
+    isActive: boolean; createdAt: string;
+}
+
+function formatSize(bytes: number) {
+    if (bytes === 0) return '—'
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / 1048576).toFixed(1) + ' MB'
+}
+
+function roleLabel(role: string) {
+    if (role === 'isci') return '👷 İşçi'
+    if (role === 'memur') return '👔 Memur'
+    if (role === 'sozlesmeli') return '📝 Sözleşmeli'
+    return '🌐 Tümü'
+}
+
+function roleBadge(role: string) {
+    const colors: any = {
+        isci: 'bg-blue-100 text-blue-700',
+        memur: 'bg-green-100 text-green-700',
+        sozlesmeli: 'bg-orange-100 text-orange-700',
+    }
+    return (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[role] || 'bg-gray-100 text-gray-600'}`}>
+            {roleLabel(role)}
+        </span>
+    )
+}
+
+export default function TISClientPage({
+    documents, files, institutions, initialTab, initialSearch, initialRole,
+}: {
+    documents: TISDoc[]; files: TISFileItem[]; institutions: string[];
+    initialTab: string; initialSearch: string; initialRole: string;
+}) {
+    const router = useRouter()
+    const [tab, setTab] = useState(initialTab)
+    const [search, setSearch] = useState(initialSearch)
+    const [role, setRole] = useState(initialRole)
+    const [showAddDoc, setShowAddDoc] = useState(false)
+    const [showAddFile, setShowAddFile] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    // Form state
+    const [formTitle, setFormTitle] = useState('')
+    const [formInstitution, setFormInstitution] = useState('')
+    const [formRole, setFormRole] = useState('')
+    const [formDescription, setFormDescription] = useState('')
+    const [formFileUrl, setFormFileUrl] = useState('')
+    const [formFileName, setFormFileName] = useState('')
+
+    const applyFilters = () => {
+        const params = new URLSearchParams()
+        if (tab !== 'documents') params.set('tab', tab)
+        if (search) params.set('search', search)
+        if (role) params.set('role', role)
+        router.push(`/tis?${params.toString()}`)
+    }
+
+    const handleDelete = async (type: 'document' | 'file', id: string, title: string) => {
+        if (!confirm(`"${title}" silinecek. Emin misiniz?`)) return
+        const endpoint = type === 'document' ? '/api/tis/documents' : '/api/tis/files'
+        await fetch(`${endpoint}?id=${id}`, { method: 'DELETE' })
+        router.refresh()
+    }
+
+    const handleAddDocument = async () => {
+        if (!formTitle || !formInstitution || !formFileUrl) return alert('Başlık, kurum ve dosya URL zorunludur')
+        setLoading(true)
+        await fetch('/api/tis/documents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: formTitle, institution: formInstitution, role: formRole,
+                description: formDescription, fileUrl: formFileUrl, fileName: formFileName || formFileUrl.split('/').pop(),
+            })
+        })
+        setLoading(false); setShowAddDoc(false)
+        setFormTitle(''); setFormInstitution(''); setFormRole(''); setFormDescription(''); setFormFileUrl(''); setFormFileName('')
+        router.refresh()
+    }
+
+    const handleAddFile = async () => {
+        if (!formTitle || !formFileUrl) return alert('Başlık ve dosya URL zorunludur')
+        setLoading(true)
+        await fetch('/api/tis/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: formTitle, role: formRole, description: formDescription,
+                fileUrl: formFileUrl, fileName: formFileName || formFileUrl.split('/').pop(),
+            })
+        })
+        setLoading(false); setShowAddFile(false)
+        setFormTitle(''); setFormRole(''); setFormDescription(''); setFormFileUrl(''); setFormFileName('')
+        router.refresh()
+    }
+
+    return (
+        <div>
+            {/* Sekmeler */}
+            <div className="flex items-center gap-2 mb-4">
+                <button
+                    onClick={() => { setTab('documents'); router.push('/tis?tab=documents') }}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === 'documents' ? 'text-white' : ''}`}
+                    style={{
+                        background: tab === 'documents' ? 'var(--primary)' : 'var(--bg-card)',
+                        color: tab === 'documents' ? 'white' : 'var(--text-secondary)',
+                        border: `1px solid ${tab === 'documents' ? 'var(--primary)' : 'var(--border)'}`
+                    }}
+                >
+                    📄 TİS Belgeleri ({documents.length})
+                </button>
+                <button
+                    onClick={() => { setTab('files'); router.push('/tis?tab=files') }}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all`}
+                    style={{
+                        background: tab === 'files' ? 'var(--primary)' : 'var(--bg-card)',
+                        color: tab === 'files' ? 'white' : 'var(--text-secondary)',
+                        border: `1px solid ${tab === 'files' ? 'var(--primary)' : 'var(--border)'}`
+                    }}
+                >
+                    📁 Genel Dosyalar ({files.length})
+                </button>
+
+                <div className="flex-1" />
+
+                {tab === 'documents' && (
+                    <button
+                        onClick={() => setShowAddDoc(true)}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                        style={{ background: 'var(--primary)' }}
+                    >
+                        + Yeni TİS Belgesi
+                    </button>
+                )}
+                {tab === 'files' && (
+                    <button
+                        onClick={() => setShowAddFile(true)}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                        style={{ background: 'var(--primary)' }}
+                    >
+                        + Yeni Dosya
+                    </button>
+                )}
+            </div>
+
+            {/* Filtreler */}
+            <div className="glass-panel p-4 rounded-2xl mb-4 flex items-center gap-4">
+                <div className="flex-1">
+                    <input
+                        type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                        placeholder="Başlık veya kurum ara..."
+                        className="w-full px-4 py-2 rounded-xl text-sm"
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    />
+                </div>
+                <select
+                    value={role} onChange={(e) => setRole(e.target.value)}
+                    className="px-4 py-2 rounded-xl text-sm"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                >
+                    <option value="">Tüm Roller</option>
+                    <option value="isci">👷 İşçi</option>
+                    <option value="memur">👔 Memur</option>
+                    <option value="sozlesmeli">📝 Sözleşmeli</option>
+                </select>
+                <button
+                    onClick={applyFilters}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: 'var(--primary)' }}
+                >
+                    🔍 Filtrele
+                </button>
+            </div>
+
+            {/* TİS Belgeleri Tablosu */}
+            {tab === 'documents' && (
+                <div className="glass-panel rounded-2xl overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr style={{ background: 'var(--bg-hover)', borderBottom: '1px solid var(--border)' }}>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Kurum</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Başlık</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Kadro</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Boyut</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Tarih</th>
+                                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {documents.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
+                                        <p className="text-4xl mb-2">📋</p>
+                                        <p>Henüz TİS belgesi eklenmemiş</p>
+                                    </td>
+                                </tr>
+                            )}
+                            {documents.map((doc) => (
+                                <tr key={doc.id} style={{ borderBottom: '1px solid var(--border)' }}
+                                    className="transition-all hover:opacity-90"
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                >
+                                    <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>
+                                        <p className="font-medium text-xs">{doc.institution}</p>
+                                    </td>
+                                    <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>
+                                        <p className="font-medium">{doc.title}</p>
+                                        {doc.description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{doc.description}</p>}
+                                    </td>
+                                    <td className="px-4 py-3">{roleBadge(doc.role)}</td>
+                                    <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{formatSize(doc.fileSize)}</td>
+                                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                        {new Date(doc.createdAt).toLocaleDateString('tr-TR')}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {doc.fileUrl && (
+                                                <a
+                                                    href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="px-3 py-1 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                                                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--primary)' }}
+                                                >
+                                                    📥 İndir
+                                                </a>
+                                            )}
+                                            <button
+                                                onClick={() => handleDelete('document', doc.id, doc.title)}
+                                                className="px-3 py-1 rounded-lg text-xs font-semibold text-red-600 transition-all hover:bg-red-50"
+                                                style={{ border: '1px solid var(--border)' }}
+                                            >
+                                                🗑️ Sil
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Genel Dosyalar Tablosu */}
+            {tab === 'files' && (
+                <div className="glass-panel rounded-2xl overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr style={{ background: 'var(--bg-hover)', borderBottom: '1px solid var(--border)' }}>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Başlık</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Açıklama</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Kadro</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Boyut</th>
+                                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Tarih</th>
+                                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-muted)' }}>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {files.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
+                                        <p className="text-4xl mb-2">📁</p>
+                                        <p>Henüz dosya eklenmemiş</p>
+                                    </td>
+                                </tr>
+                            )}
+                            {files.map((file) => (
+                                <tr key={file.id} style={{ borderBottom: '1px solid var(--border)' }}
+                                    className="transition-all"
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                >
+                                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{file.title}</td>
+                                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{file.description || '—'}</td>
+                                    <td className="px-4 py-3">{roleBadge(file.role)}</td>
+                                    <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{formatSize(file.fileSize)}</td>
+                                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                        {new Date(file.createdAt).toLocaleDateString('tr-TR')}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {file.fileUrl && (
+                                                <a
+                                                    href={file.fileUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="px-3 py-1 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                                                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--primary)' }}
+                                                >
+                                                    📥 İndir
+                                                </a>
+                                            )}
+                                            <button
+                                                onClick={() => handleDelete('file', file.id, file.title)}
+                                                className="px-3 py-1 rounded-lg text-xs font-semibold text-red-600 transition-all hover:bg-red-50"
+                                                style={{ border: '1px solid var(--border)' }}
+                                            >
+                                                🗑️ Sil
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Yeni TİS Belgesi Modal */}
+            {showAddDoc && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddDoc(false)}>
+                    <div className="glass-panel rounded-2xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-card)' }}>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>📄 Yeni TİS Belgesi</h3>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Kurum / Bakanlık *</label>
+                                <input type="text" value={formInstitution} onChange={(e) => setFormInstitution(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    placeholder="Ör: Sağlık Bakanlığı" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Başlık *</label>
+                                <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    placeholder="Ör: Sağlık Bakanlığı TİS 2025-2026" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Kadro Tipi</label>
+                                <select value={formRole} onChange={(e) => setFormRole(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                                    <option value="">Tüm Roller</option>
+                                    <option value="isci">İşçi</option>
+                                    <option value="memur">Memur</option>
+                                    <option value="sozlesmeli">Sözleşmeli</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Açıklama</label>
+                                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1" rows={2}
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Dosya URL *</label>
+                                <input type="text" value={formFileUrl} onChange={(e) => setFormFileUrl(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    placeholder="https://kamulog.net/media/tis/..." />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button onClick={() => setShowAddDoc(false)} className="px-4 py-2 rounded-xl text-sm"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                                İptal
+                            </button>
+                            <button onClick={handleAddDocument} disabled={loading}
+                                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                                style={{ background: 'var(--primary)' }}>
+                                {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Yeni Dosya Modal */}
+            {showAddFile && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddFile(false)}>
+                    <div className="glass-panel rounded-2xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg-card)' }}>
+                        <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>📁 Yeni Dosya</h3>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Başlık *</label>
+                                <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    placeholder="Ör: 696 Kanun Hükmünde Kararname" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Kadro Tipi</label>
+                                <select value={formRole} onChange={(e) => setFormRole(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                                    <option value="">Tüm Roller</option>
+                                    <option value="isci">İşçi</option>
+                                    <option value="memur">Memur</option>
+                                    <option value="sozlesmeli">Sözleşmeli</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Açıklama</label>
+                                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1" rows={2}
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Dosya URL *</label>
+                                <input type="text" value={formFileUrl} onChange={(e) => setFormFileUrl(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl text-sm mt-1"
+                                    style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    placeholder="https://kamulog.net/media/tis/files/..." />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button onClick={() => setShowAddFile(false)} className="px-4 py-2 rounded-xl text-sm"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                                İptal
+                            </button>
+                            <button onClick={handleAddFile} disabled={loading}
+                                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                                style={{ background: 'var(--primary)' }}>
+                                {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}

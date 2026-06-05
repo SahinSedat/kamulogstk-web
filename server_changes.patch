@@ -1,0 +1,126 @@
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 0881ebf..6cb8bbb 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -147,6 +147,9 @@ model User {
+ 
+   @@index([managedBranchId])
+   @@index([status])
++  chatMessages    STKChatMessage[]
++  chatReports     STKChatReport[]
++  chatReactions   STKChatReaction[]
+ }
+ 
+ model Institution {
+@@ -1060,6 +1063,11 @@ model STKOrganization {
+   bankAccountName              String?
+   consentText                  String?
+   contractPdfUrl               String?
++  branchesPublic               Boolean                 @default(true)
++  activitiesPublic             Boolean                 @default(false)
++  decisionsPublic              Boolean                 @default(false)
++  chatPublic                   Boolean                 @default(false)
++  chatDisabledForMembers       Boolean                 @default(false)
+   isConsentActive              Boolean                 @default(false)
+   isApplicationEnabled         Boolean                 @default(true)
+   isFeatured                   Boolean                 @default(false)
+@@ -1117,6 +1125,7 @@ model STKOrganization {
+   @@index([city])
+   @@index([slug])
+   @@index([isFeatured])
++  chatMessages    STKChatMessage[]
+ }
+ 
+ model STKFAQ {
+@@ -1652,6 +1661,7 @@ model STKBoardDecision {
+   subject         String
+   content         String?
+   status          STKDecisionStatus @default(DRAFT)
++  showOnMobile    Boolean           @default(false)
+   createdBy       String?
+   createdAt       DateTime          @default(now())
+   updatedAt       DateTime
+@@ -1709,6 +1719,7 @@ model STKBranch {
+   whatsappCredits Int           @default(0)
+   emailCredits    Int           @default(0)
+   pushCredits     Int           @default(0)
++  showOnMobile    Boolean       @default(true)
+   Member          Member[]
+   STKActivity     STKActivity[]
+   User            User[]
+@@ -2051,3 +2062,63 @@ model STKAuditLog {
+   @@index([entityType])
+   @@index([createdAt])
+ }
++
++
++// ── Toplu SMS Ayarları ──
++model GlobalSettings {
++  id                 String   @id @default("global")
++  smsContractUrl     String?
++  smsContractExampleUrl String?
++  smsExampleDocUrl   String?
++  whatsappNumber     String?  @default("905392647655")
++  updatedAt          DateTime @updatedAt
++}
++
++
++// ═══════════════════════════════════════
++// STK Chat Models (shared DB sync)
++// ═══════════════════════════════════════
++model STKChatMessage {
++  id          String   @id @default(cuid())
++  stkId       String
++  userId      String
++  message     String   @db.Text
++  isDeleted   Boolean  @default(false)
++  createdAt   DateTime @default(now())
++
++  stk         STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
++  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
++  reports     STKChatReport[]
++  reactions   STKChatReaction[]
++
++  @@index([stkId, createdAt])
++}
++
++model STKChatReport {
++  id               String   @id @default(cuid())
++  messageId        String
++  reportedByUserId String
++  reason           String
++  status           String   @default("PENDING")
++  createdAt        DateTime @default(now())
++
++  message          STKChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
++  reportedByUser   User           @relation(fields: [reportedByUserId], references: [id], onDelete: Cascade)
++
++  @@index([messageId])
++  @@index([status])
++}
++
++model STKChatReaction {
++  id        String   @id @default(cuid())
++  messageId String
++  userId    String
++  type      String
++  createdAt DateTime @default(now())
++
++  message   STKChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
++  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@unique([messageId, userId])
++  @@index([messageId])
++}
+diff --git a/src/components/layout/Sidebar.tsx b/src/components/layout/Sidebar.tsx
+index af29c40..9d2b38b 100644
+--- a/src/components/layout/Sidebar.tsx
++++ b/src/components/layout/Sidebar.tsx
+@@ -42,6 +42,7 @@ const menuGroups: MenuGroup[] = [
+       { label: "Becayiş", href: "/becayis", icon: ArrowLeftRight, roles: ["ADMIN", "MODERATOR"] },
+       { label: "Mesajlar", href: "/messages", icon: MessageSquare, roles: ["ADMIN", "MODERATOR", "CONSULTANT"] },
+       { label: "STK Yönetimi", href: "/stk", icon: Building2, roles: ["ADMIN", "MODERATOR"] },
++    { label: "SMS Ayarları", href: "/sms-ayarlari", icon: MessageSquare, roles: ["ADMIN", "MODERATOR"] },
+       { label: "Kariyer", href: "/career", icon: Briefcase, roles: ["ADMIN", "MODERATOR"] },
+       { label: "KPSS Soru Yönetimi", href: "/career/kpss-management", icon: Database, roles: ["ADMIN"] },
+       { label: "Kariyer Plan Yönetimi", href: "/career/plans", icon: Briefcase, roles: ["ADMIN"] },

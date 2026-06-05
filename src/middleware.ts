@@ -1,191 +1,145 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-)
+/**
+ * 🏦 Enterprise Security Middleware (v12.5)
+ * 
+ * STK_SERVER_MODE=true olduğunda:
+ * - /dashboard, /admin, /users, /subscriptions vb. ADMIN rotaları tamamen ENGELLENİR
+ * - Sadece /stk-panel, /login, / (landing) ve /api/stk-panel/* erişilebilir
+ * - Bu sayede yeni sunucuda Admin panelinin "A"sı bile açılamaz
+ */
+const IS_STK_SERVER = process.env.STK_SERVER_MODE === "true";
 
-const COOKIE_NAME = 'auth-token'
+// Admin-only rotalar (STK sunucusunda TAMAMEN kapalı)
+const ADMIN_BLOCKED_PATHS = [
+  "/dashboard",
+  "/users",
+  "/consultants",
+  "/messages",
+  "/becayis",
+  "/subscriptions",
+  "/orders",
+  "/notifications",
+  "/content",
+  "/career",
+  "/settings",
+  "/requests",
+  "/reports",
+  "/stk-activities",
+  "/stk-campaigns",
+  "/stk-payments",
+  "/stk/",
+];
 
-// Public routes that don't require authentication
-const publicRoutes = [
-    '/',
-    '/giris',
-    '/kayit',
-    '/sifremi-unuttum',
-    // Auth API endpoints (login, register, OTP, logout)
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/auth/logout',
-    '/api/auth/send-otp',
-    '/api/auth/verify-otp',
-    '/api/auth/me',
-    '/api/giris',
-    '/api/kayit',
-    '/uyegirisi', // Mobil uygulama indirme sayfası
-    // Landing page routes
-    '/hakkimizda',
-    '/iletisim',
-    '/haber',
-    '/gizlilik-politikasi',
-    '/kullanim-sartlari',
-    '/kvkk',
-    '/fiyatlandirma',
-    '/api/public', // Public API endpoints (STK başvuru vb.)
-    '/api/dev', // Geliştirme endpoint'leri (seeder vb.)
-    '/api/locations', // Lokasyon arama (public)
-]
-// Admin-only routes
-const adminRoutes = ['/admin', '/api/admin']
+// Admin API rotaları (STK sunucusunda engellenir)
+const ADMIN_API_PATHS = [
+  "/api/admin",
+  "/api/users",
+  "/api/orders",
+  "/api/becayis",
+  "/api/conversations",
+  "/api/kariyer",
+  "/api/notifications",
+];
 
-// STK routes (requires STK_MANAGER or ADMIN)
-const stkRoutes = ['/stk', '/api/stk']
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
 
-function isPublicRoute(pathname: string): boolean {
-    return publicRoutes.some(route =>
-        pathname === route || pathname.startsWith(`${route}/`)
-    )
-}
+    // ═══════════════════════════════════════════════════════════
+    // 🔒 STK SUNUCU İZOLASYONU — Admin rotalarını tamamen engelle
+    // ═══════════════════════════════════════════════════════════
+    if (IS_STK_SERVER) {
+      // Admin sayfalarına erişim engeli
+      const isAdminPage = ADMIN_BLOCKED_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+      if (isAdminPage) {
+        console.log(`[Middleware] 🚫 STK Server izolasyonu: ${path} engellendi`);
+        return NextResponse.redirect(new URL("/", req.url));
+      }
 
-function isAdminRoute(pathname: string): boolean {
-    return adminRoutes.some(route =>
-        pathname === route || pathname.startsWith(`${route}/`)
-    )
-}
-
-function isSTKRoute(pathname: string): boolean {
-    return stkRoutes.some(route =>
-        pathname === route || pathname.startsWith(`${route}/`)
-    )
-}
-
-export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
-
-    // Skip middleware for static files and Next.js internals
-    if (
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.includes('.') // Static files like .css, .js, .png
-    ) {
-        return NextResponse.next()
+      // Admin API'lerine erişim engeli
+      const isAdminApi = ADMIN_API_PATHS.some((p) => path.startsWith(p));
+      if (isAdminApi) {
+        console.log(`[Middleware] 🚫 STK Server API izolasyonu: ${path} engellendi`);
+        return NextResponse.json(
+          { error: "Bu endpoint STK sunucusunda kullanılamaz" },
+          { status: 403 }
+        );
+      }
     }
 
-    // Redirect legacy citizen portal routes to landing page
-    if (pathname.startsWith('/vatandas/') && pathname.length > 9) {
-        return NextResponse.redirect(new URL('/uyegirisi', request.url))
+    // Public becayiş sayfasına herkes erişebilir
+    if (path.startsWith("/becayis/public")) {
+      return NextResponse.next();
     }
 
-    // Allow public routes but redirect logged-in users away from login/register
-    if (isPublicRoute(pathname)) {
-        if (pathname === '/giris' || pathname === '/kayit') {
-            const token = request.cookies.get(COOKIE_NAME)?.value
-            if (token) {
-                try {
-                    const { payload } = await jwtVerify(token, JWT_SECRET)
-                    const userRole = payload.role as string
-
-                    if (userRole === 'ADMIN') {
-                        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-                    } else if (userRole === 'STK_MANAGER' || userRole === 'BRANCH_MANAGER') {
-                        return NextResponse.redirect(new URL('/stk/uyeler', request.url))
-                    } else {
-                        return NextResponse.redirect(new URL('/', request.url))
-                    }
-                } catch {
-                    // Invalid token, allow access to login/register (will be cleared later)
-                }
-            }
-        }
-        return NextResponse.next()
-    }
-
-    // Get auth token from cookie
-    const token = request.cookies.get(COOKIE_NAME)?.value
-
+    // Giriş yapılmamışsa login'e yönlendir
     if (!token) {
-        // No token - redirect to login for pages, return 401 for API
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-                { error: 'Yetkilendirme gerekli', code: 'UNAUTHORIZED' },
-                { status: 401 }
-            )
-        }
-        return NextResponse.redirect(new URL('/giris', request.url))
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    try {
-        // Verify token
-        const { payload } = await jwtVerify(token, JWT_SECRET)
-        const userRole = payload.role as string
-
-        // Check admin routes
-        if (isAdminRoute(pathname)) {
-            if (userRole !== 'ADMIN') {
-                if (pathname.startsWith('/api/')) {
-                    return NextResponse.json(
-                        { error: 'Bu işlem için yetkiniz yok', code: 'FORBIDDEN' },
-                        { status: 403 }
-                    )
-                }
-                return NextResponse.redirect(new URL('/giris', request.url))
-            }
-        }
-
-        // Check STK routes
-        if (isSTKRoute(pathname)) {
-            if (userRole !== 'STK_MANAGER' && userRole !== 'BRANCH_MANAGER' && userRole !== 'ADMIN') {
-                if (pathname.startsWith('/api/')) {
-                    return NextResponse.json(
-                        { error: 'Bu işlem için yetkiniz yok', code: 'FORBIDDEN' },
-                        { status: 403 }
-                    )
-                }
-                return NextResponse.redirect(new URL('/giris', request.url))
-            }
-        }
-
-        // Add user info to headers for API routes
-        const response = NextResponse.next()
-        response.headers.set('x-user-id', payload.userId as string)
-        response.headers.set('x-user-role', userRole)
-        if (payload.stkId) {
-            response.headers.set('x-stk-id', payload.stkId as string)
-        }
-
-        // Prevent browser caching - stops back button from showing logged-out pages
-        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-        response.headers.set('Pragma', 'no-cache')
-        response.headers.set('Expires', '0')
-
-        return response
-
-    } catch {
-        // Invalid token
-        if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-                { error: 'Geçersiz token', code: 'INVALID_TOKEN' },
-                { status: 401 }
-            )
-        }
-
-        // Clear invalid cookie and redirect to login
-        const response = NextResponse.redirect(new URL('/giris', request.url))
-        response.cookies.delete(COOKIE_NAME)
-        return response
+    // Sadece ADMIN, MODERATOR, CONSULTANT, STK_MANAGER erişebilir
+    const role = token.role as string;
+    if (!["ADMIN", "MODERATOR", "CONSULTANT", "STK_MANAGER"].includes(role)) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
-}
+
+    // STK_MANAGER sadece STK sayfalarına erişebilir
+    const stkPaths = ["/stk", "/stk-panel", "/stk-activities", "/stk-campaigns", "/stk-payments"];
+    if (role === "STK_MANAGER") {
+      const isSTKPath = stkPaths.some((p) => path === p || path.startsWith(p + "/"));
+      if (!isSTKPath) {
+        return NextResponse.redirect(new URL("/stk-panel", req.url));
+      }
+      return NextResponse.next();
+    }
+
+    // RBAC kontrolleri (admin/moderator/consultant)
+    const adminOnlyPaths = ["/subscriptions", "/settings"];
+    const modPaths = ["/users", "/notifications", "/content", "/becayis", "/career", "/orders"];
+
+    if (adminOnlyPaths.some((p) => path.startsWith(p)) && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    if (modPaths.some((p) => path.startsWith(p)) && role === "CONSULTANT") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Public becayiş sayfasına token olmadan da erişim
+        if (req.nextUrl.pathname.startsWith("/becayis/public")) return true;
+        return !!token;
+      },
+    },
+  }
+);
 
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - public folder
-         */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
-    ],
-}
+  matcher: [
+    "/dashboard/:path*",
+    "/users/:path*",
+    "/consultants/:path*",
+    "/messages/:path*",
+    "/becayis/:path*",
+    "/subscriptions/:path*",
+    "/orders/:path*",
+    "/notifications/:path*",
+    "/content/:path*",
+    "/career/:path*",
+    "/settings/:path*",
+    "/requests/:path*",
+    "/reports/:path*",
+    "/stk/:path*",
+    "/stk-activities/:path*",
+    "/stk-campaigns/:path*",
+    "/stk-payments/:path*",
+    "/stk-panel/:path*",
+  ],
+};

@@ -1,6 +1,3 @@
-// KamulogSTK - STK Yönetim Platformu Veritabanı Şeması
-// Multi-tenant SaaS platformu için tasarlanmış ölçeklenebilir şema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,805 +7,2044 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==========================================
-// KULLANICI VE YETKİLENDİRME
-// ==========================================
-
-enum UserRole {
-  USER           // Eski DB'deki mevcut değer
-  CONSULTANT     // Eski DB'deki mevcut değer
-  MODERATOR      // Eski DB'deki mevcut değer
-  ADMIN
-  STK_MANAGER
-  BRANCH_MANAGER // Şube yöneticisi
-  CITIZEN
-
-  @@map("Role") // DB'deki enum adı
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  PENDING
-  SUSPENDED
-}
-
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  password      String
-  name          String?
-  phone         String?
-  role          UserRole   @default(STK_MANAGER)
-  status        UserStatus @default(PENDING)
-  emailVerified DateTime?
-  avatar        String?
+  id                        String                @id @default(cuid())
+  email                     String?               @unique
+  phone                     String?               @unique
+  password                  String
+  name                      String?
+  firstName                 String?
+  lastName                  String?
+  avatarUrl                 String?
+  role                      Role                  @default(USER)
+  isVerified                Boolean               @default(false)
+  isActive                  Boolean               @default(true)
+  subscriptionTier          String?               @default("basic")
+  employmentType            String?
+  ministryCode              Int?
+  title                     String?
+  credits                   Int                   @default(0)
+  isPremium                 Boolean               @default(false)
+  premiumUntil              DateTime?
+  aiTokens                  Int                   @default(0)
+  becayisListingLimit       Int?
+  listingQuotaOneTime       Int                   @default(0)
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  address                   String?
+  city                      String?
+  cvApplicationsUsed        Int                   @default(0)
+  cvChatTokens              Int                   @default(20)
+  district                  String?
+  emailChangeCode           String?
+  newEmail                  String?
+  phoneNumber               String?               @unique
+  taxNumber                 String?
+  taxOffice                 String?
+  verificationCode          String?
+  verificationExpires       DateTime?
+  emailVerified             DateTime?
+  accountDeleted            Boolean               @default(false)
+  accountDeletedAt          DateTime?
+  accountFrozen             Boolean               @default(false)
+  institutionName           String?
+  kvkkAccepted              Boolean               @default(false)
+  lastEmailChangeDate       DateTime?
+  lastLoginMethod           String?
+  lastPhoneChangeDate       DateTime?
+  phoneVerified             Boolean               @default(false)
+  postalCode                String?
+  userAgreementAccepted     Boolean               @default(false)
+  tcKimlik                  String?
+  yearsWorking              Int?
+  istihdamTuru              String?
+  unvan                     String?
+  isAriyor                  Boolean?              @default(false)
+  isOnline                  Boolean               @default(false)
+  lastSeen                  DateTime?
+  isWorkInfoGeneratedByAI   Boolean               @default(false)
+  aiGeneratedBecayisText    String?
+  atamaUsulu                String?
+  bakanlik                  String?
+  isLookingForBecayis       Boolean               @default(false)
+  kurum                     String?
+  targetCities              String?
+  aiExtractedEmploymentType String?
+  alternativeCities         String?
+  fcmToken                  String?
+  subInstitutionId          String?
+  isRadarActive             Boolean               @default(false)
+  radarActivatedAt          DateTime?
+  radarExpiresAt            DateTime?
+  notifEmail                Boolean               @default(true)
+  notifPush                 Boolean               @default(true)
+  notifSms                  Boolean               @default(false)
+  notifWhatsapp             Boolean               @default(true)
+  careerAiTokens            Int                   @default(0)
+  careerPremiumUntil        DateTime?
+  isCareerPremium           Boolean               @default(false)
+  careerRadarExpiresAt      DateTime?
+  isCareerRadarActive       Boolean               @default(false)
+  deactivatedAt             DateTime?
+  deactivationReason        String?
+  isDeactivated             Boolean               @default(false)
+  consultantJetons          Int                   @default(0)
+  banBecayisUntil           DateTime?
+  banForumUntil             DateTime?
+  banReason                 String?
+  managedBranchId           String?
+  status                    String                @default("ACTIVE")
+  occupation                String?
+  workplace                 String?
+  education                 String?
+  preferredCity             String?
+  notifSystem               Boolean               @default(true)
+  gender                    String?
+  birthDate                 DateTime?
+  registrationPurpose       String?
+  isStkOfficial             Boolean               @default(false)
+  stkOfficialRole           String?
+  isStkMember               Boolean               @default(false)
+  memberStkName             String?
+  avatar                    String?
+  lastLoginAt               DateTime?
+  managedStkId              String?
+  otpCode                   String?
+  otpExpiry                 DateTime?
+  aiUsageLogs               AIUsageLog[]
+  adminLogs                 AdminLog[]
+  approvedListings          BecayisListing[]      @relation("ApprovedListings")
+  becayisListings           BecayisListing[]      @relation("OwnerListings")
+  receivedBecayisMessages   BecayisMessage[]      @relation("ReceivedBecayisMessages")
+  sentBecayisMessages       BecayisMessage[]      @relation("SentBecayisMessages")
+  blockedMe                 BlockedUser[]         @relation("BlockedByUser")
+  blockedByMe               BlockedUser[]         @relation("BlockerUser")
+  cvs                       CV[]
+  cvanalyses                CVAnalysis[]
+  chatSessions              ChatSession[]
+  consultationRequests      ConsultationRequest[]
+  conversations             Conversation[]
+  favoriteAds               FavoriteAd[]
+  kariyerChatRooms          KariyerChatRoom[]
+  kariyerSubscription       KariyerSubscription?
+  kpssExamHistory           KpssExamHistory[]
+  kpssQuestionReports       KpssQuestionReport[]
+  receivedMatchRequests     MatchRequest[]        @relation("ReceivedMatchRequests")
+  sentMatchRequests         MatchRequest[]        @relation("SentMatchRequests")
+  Member                    Member[]
+  sentMessages              Message[]
+  MessageCampaign           MessageCampaign[]
+  notifications             Notification[]
+  orders                    Order[]
+  reports                   Report[]              @relation("UserReports")
+  stkAuditLogs              STKAuditLog[]
+  chatMessages              STKChatMessage[]
+  chatReactions             STKChatReaction[]
+  chatReports               STKChatReport[]
+  managedSTK                STKOrganization?  @relation("STKManager")
+  salesRecords              SalesRecord[]
+  storeTransactions         StoreTransaction[]
+  subscriptions             Subscription[]
+  usageRecords              UsageRecord[]
+  STKBranch                 STKBranch?            @relation(fields: [managedBranchId], references: [id])
 
-  // Profil Bilgileri
-  address       String?
-  city          String?
-  district      String?
-  occupation    String?
-  workplace     String?
-  education     String?
-  preferredCity String? // Tercih edilen şehir (STK keşfet için)
-
-  // Bildirim Tercihleri
-  notifSms    Boolean @default(true) // SMS bildirimleri
-  notifEmail  Boolean @default(true) // E-posta bildirimleri
-  notifSystem Boolean @default(true) // Sistem/uygulama bildirimleri
-
-  // Ek Profil Bilgileri
-  gender              String?
-  birthDate           DateTime?
-  registrationPurpose String?   @db.Text
-
-  // STK İlişkisi (Kullanıcı Beyanı)
-  isStkOfficial   Boolean @default(false) // STK yetkilisi mi?
-  stkOfficialRole String? // STK'daki görevi (Bşk, Bşk Yrd vb.)
-  isStkMember     Boolean @default(false) // Herhangi bir STK'ya üye mi?
-  memberStkName   String? // Üye olduğu STK'nın adı
-
-  // Şube İlişkisi (Şube yöneticileri için)
-  managedBranchId String?
-  managedBranch   STKBranch? @relation("BranchManagers", fields: [managedBranchId], references: [id], onDelete: SetNull)
-
-  // İlişkiler
-  stk           STK?           @relation("STKManager")
-  sessions      Session[]
-  auditLogs     AuditLog[]
-  notifications Notification[]
-
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  lastLoginAt      DateTime?
-  messageCampaigns MessageCampaign[]
-  documents        Document[]
-  interests        UserInterest[]
-  memberships      Member[]          @relation("UserMemberships")
-
-  @@index([email])
-  @@index([role])
-  @@index([status])
   @@index([managedBranchId])
+  @@index([status])
 }
 
-model Session {
+model Institution {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  isActive        Boolean          @default(true)
+  order           Int              @default(0)
+  createdAt       DateTime         @default(now())
+  listings        BecayisListing[]
+  subInstitutions SubInstitution[]
+}
+
+model SubInstitution {
+  id            String      @id @default(cuid())
+  name          String
+  institutionId String
+  createdAt     DateTime    @default(now())
+  isApproved    Boolean     @default(false)
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
+  @@unique([name, institutionId])
+  @@index([institutionId])
+}
+
+model BecayisListing {
+  id                     String           @id @default(cuid())
+  ownerId                String
+  title                  String
+  role                   String           @default("memur")
+  institutionId          String?
+  branch                 String           @default("")
+  currentCity            String
+  targetCity             String
+  assignmentMethod       String?
+  description            String
+  isPremium              Boolean          @default(false)
+  premiumUntil           DateTime?
+  status                 String           @default("draft")
+  approvedById           String?
+  slug                   String           @unique
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  adNumber               String?          @unique
+  pendingChanges         Json?
+  viewCount              Int              @default(0)
+  isGeneratedByKamulogAI Boolean          @default(false)
+  atamaUsulu             String?
+  bakanlik               String?
+  istihdamTuru           String?
+  kurum                  String?
+  unvan                  String?
+  boostedUntil           DateTime?
+  hasUsedFreeBoost       Boolean          @default(false)
+  isUrgent               Boolean          @default(false)
+  rejectionReason        String?
+  removalReason          String?
+  urgentUntil            DateTime?
+  expiresAt              DateTime?
+  isExpiredNotified      Boolean          @default(false)
+  isExpiringNotified     Boolean          @default(false)
+  approvedAt             DateTime?
+  approvedBy             User?            @relation("ApprovedListings", fields: [approvedById], references: [id])
+  institution            Institution?     @relation(fields: [institutionId], references: [id])
+  owner                  User             @relation("OwnerListings", fields: [ownerId], references: [id])
+  messages               BecayisMessage[]
+  favoriteAds            FavoriteAd[]
+  matchRequests          MatchRequest[]   @relation("MatchRequestsForListing")
+  reports                Report[]
+}
+
+model MatchRequest {
+  id             String           @id @default(cuid())
+  senderId       String
+  receiverId     String
+  listingId      String
+  status         MatchStatus      @default(PENDING)
+  messageType    MatchMessageType
+  messageText    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  receiverHidden Boolean          @default(false)
+  senderHidden   Boolean          @default(false)
+  listing        BecayisListing   @relation("MatchRequestsForListing", fields: [listingId], references: [id], onDelete: Cascade)
+  receiver       User             @relation("ReceivedMatchRequests", fields: [receiverId], references: [id])
+  sender         User             @relation("SentMatchRequests", fields: [senderId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([listingId, senderId])
+}
+
+model BecayisMessage {
+  id              String         @id @default(cuid())
+  senderId        String
+  receiverId      String
+  listingId       String
+  content         String
+  isRead          Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  isFiltered      Boolean        @default(false)
+  status          MessageStatus  @default(SENT)
+  isDeletedByUser Boolean        @default(false)
+  listing         BecayisListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  receiver        User           @relation("ReceivedBecayisMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender          User           @relation("SentBecayisMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, listingId])
+  @@index([receiverId, isRead])
+  @@index([receiverId, status])
+  @@index([listingId])
+}
+
+model FavoriteAd {
+  id        String         @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime       @default(now())
+  listing   BecayisListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model Consultant {
+  id                      String             @id @default(cuid())
+  userId                  String?            @unique
+  name                    String
+  title                   String
+  category                String
+  bio                     String
+  specializations         String[]
+  experienceYears         Int                @default(0)
+  avatarUrl               String?
+  rating                  Float              @default(0)
+  reviewCount             Int                @default(0)
+  isOnline                Boolean            @default(false)
+  isFeatured              Boolean            @default(false)
+  completedConsultations  Int                @default(0)
+  isActive                Boolean            @default(true)
+  createdAt               DateTime           @default(now())
+  consultantCredits       Int                @default(0)
+  creditPrice             Float              @default(0)
+  iban                    String?
+  sessionFeeJeton         Int                @default(5)
+  email                   String?
+  phone                   String?
+  workingHours            String             @default("Hafta içi 09:00 - 17:00")
+  costPerMessage          Int                @default(5)
+  maxMessagesPerSession   Int                @default(10)
+  commissionRate          Float              @default(20)
+  payouts                 ConsultantPayout[]
+  consultantConversations Conversation[]
+  payoutRequests          PayoutRequest[]
+  reviews                 Review[]
+  packages                ServicePackage[]
+}
+
+model ServicePackage {
+  id           String     @id @default(cuid())
+  consultantId String
+  name         String
+  price        Float
+  description  String
+  durationMins Int
+  includes     String[]
+  iapProductId String?
+  isActive     Boolean    @default(true)
+  consultant   Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id            String     @id @default(cuid())
+  userId        String
+  consultantId  String
+  category      String
+  lastMessage   String?
+  lastMessageAt DateTime?
+  unreadCount   Int        @default(0)
+  createdAt     DateTime   @default(now())
+  isEnded       Boolean    @default(false)
+  consultant    Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id])
+  messages      Message[]
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  senderId       String
+  text           String
+  type           MessageType   @default(TEXT)
+  fileUrl        String?
+  fileName       String?
+  status         MessageStatus @default(SENT)
+  createdAt      DateTime      @default(now())
+  isFiltered     Boolean       @default(false)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User          @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([status])
+}
+
+model Review {
+  id             String     @id @default(cuid())
+  consultantId   String
+  userId         String
+  userName       String
+  rating         Float
+  comment        String
+  createdAt      DateTime   @default(now())
+  conversationId String?    @unique
+  consultant     Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String            @id @default(cuid())
+  userId        String
+  status        String            @default("COMPLETED")
+  createdAt     DateTime          @default(now())
+  amount        Float             @default(0)
+  invoiceStatus String            @default("UNSENT")
+  notes         String?
+  orderNumber   String            @unique
+  planId        String?
+  updatedAt     DateTime          @updatedAt
+  orderType     String            @default("SUBSCRIPTION")
+  plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
+  user          User              @relation(fields: [userId], references: [id])
+
+  @@index([orderNumber])
+  @@index([userId])
+  @@index([status])
+  @@index([orderType])
+}
+
+model ConsultationRequest {
+  id           String   @id @default(cuid())
+  userId       String
+  consultantId String
+  packageId    String
+  description  String
+  aiBriefing   String?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model SubscriptionPlan {
+  id                 String         @id @default(cuid())
+  name               String
+  interval           String         @default("monthly")
+  price              Float
+  description        String?
+  badgeText          String?
+  yearlyDiscountRate Int            @default(20)
+  includedQuota      Int            @default(5)
+  isActive           Boolean        @default(true)
+  order              Int            @default(0)
+  createdAt          DateTime       @default(now())
+  appleProductId     String?
+  entitlements       String[]       @default([])
+  features           String[]       @default([])
+  googleProductId    String?
+  aiSearchQuota      Int            @default(15)
+  boostQuota         Int            @default(1)
+  listingQuota       Int            @default(1)
+  matchRequestQuota  Int            @default(15)
+  isDefault          Boolean        @default(false)
+  boostDurationDays  Int            @default(7)
+  urgentDurationDays Int            @default(7)
+  urgentQuota        Int            @default(0)
+  hasRadarFeature    Boolean        @default(false)
+  radarDurationDays  Int            @default(30)
+  yearlyPrice        Float          @default(0)
+  isUnlimited        Boolean        @default(false)
+  tisChatQuota       Int            @default(0)
+  orders             Order[]
+  subscriptions      Subscription[]
+}
+
+model Subscription {
+  id            String           @id @default(cuid())
+  userId        String
+  planId        String
+  status        String           @default("active")
+  startedAt     DateTime         @default(now())
+  endsAt        DateTime
+  createdAt     DateTime         @default(now())
+  productId     String?
+  purchaseToken String?
+  store         String?
+  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
+  user          User             @relation(fields: [userId], references: [id])
+}
+
+model Report {
+  id           String         @id @default(cuid())
+  reporterId   String
+  reportedAdId String
+  reason       String
+  status       String         @default("pending")
+  createdAt    DateTime       @default(now())
+  reportedAd   BecayisListing @relation(fields: [reportedAdId], references: [id], onDelete: Cascade)
+  reporter     User           @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedAdId])
+  @@index([status])
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  targetType String
+  targetId   String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType])
+  @@index([createdAt])
+}
+
+model SalesRecord {
+  id               String   @id @default(cuid())
+  orderNumber      String   @unique
+  userId           String
+  subscriptionId   String?
+  plan             String
+  amount           Float
+  currency         String   @default("TRY")
+  paymentMethod    String?
+  status           String   @default("COMPLETED")
+  notes            String?
+  billingName      String?
+  billingEmail     String?
+  billingPhone     String?
+  billingAddress   String?
+  billingCity      String?
+  billingDistrict  String?
+  billingTaxNumber String?
+  billingTaxOffice String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderNumber])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model KariyerSubscription {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  plan      String    @default("FREE")
+  status    String    @default("PENDING")
+  orderCode String?   @unique
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CV {
+  id             String       @id @default(cuid())
+  userId         String
+  title          String
+  data           String
+  template       String       @default("modern")
+  pdfPath        String?
+  pdfGeneratedAt DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses       CVAnalysis[]
+}
+
+model SiteSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UsageRecord {
   id        String   @id @default(cuid())
   userId    String
-  token     String   @unique
-  expires   DateTime
-  userAgent String?
-  ipAddress String?
+  type      String
+  count     Int      @default(1)
+  month     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, type, month])
+}
 
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  messages  String
+  cvId      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model JobListing {
+  id             String        @id @default(cuid())
+  code           String?       @unique
+  title          String
+  company        String
+  location       String?
+  description    String
+  requirements   String?
+  type           String        @default("PRIVATE")
+  sourceUrl      String?
+  applicationUrl String?
+  salary         String?
+  deadline       DateTime?
+  employerPhone  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  isActive       Boolean       @default(true)
+  analyses       CVAnalysis[]
+  favoriteJobs   FavoriteJob[]
+
+  @@index([code])
+}
+
+model FavoriteJob {
+  id        String     @id @default(cuid())
+  userId    String
+  jobId     String
+  createdAt DateTime   @default(now())
+  job       JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@index([userId])
+}
+
+model CVAnalysis {
+  id        String     @id @default(cuid())
+  userId    String
+  cvId      String
+  jobId     String
+  score     Int
+  feedback  String
+  createdAt DateTime   @default(now())
+  cv        CV         @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  job       JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  name            String?
+  discountType    String    @default("PERCENT")
+  discountValue   Float
+  validFrom       DateTime  @default(now())
+  validUntil      DateTime?
+  maxUsage        Int?
+  usageCount      Int       @default(0)
+  planRestriction String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model KariyerConsultant {
+  id          String                    @id @default(cuid())
+  name        String
+  phone       String
+  title       String
+  description String?
+  avatarUrl   String?
+  isActive    Boolean                   @default(true)
+  userId      String?                   @unique
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  chatRooms   KariyerChatRoom[]
+  ratings     KariyerConsultantRating[]
+}
+
+model KariyerChatRoom {
+  id           String                   @id @default(cuid())
+  userId       String
+  consultantId String
+  status       String                   @default("ACTIVE")
+  closedAt     DateTime?
+  closedBy     String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  messages     KariyerChatMessage[]
+  consultant   KariyerConsultant        @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating       KariyerConsultantRating?
+
+  @@unique([userId, consultantId])
+  @@index([userId])
+  @@index([consultantId])
+  @@index([status])
+}
+
+model KariyerChatMessage {
+  id         String          @id @default(cuid())
+  roomId     String
+  senderId   String
+  senderType String
+  content    String
+  isRead     Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  room       KariyerChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([createdAt])
+}
+
+model KariyerConsultantRating {
+  id           String            @id @default(cuid())
+  roomId       String            @unique
+  consultantId String
+  userId       String
+  rating       Int
+  comment      String?
+  createdAt    DateTime          @default(now())
+  consultant   KariyerConsultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  room         KariyerChatRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId])
+  @@index([userId])
+}
+
+model MediaCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  media     Media[]
+}
+
+model Media {
+  id         String         @id @default(cuid())
+  filename   String
+  url        String
+  mimeType   String?
+  size       Int?
+  categoryId String?
+  link       String?
+  isActive   Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  category   MediaCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([isActive])
+}
+
+model WhatsAppLog {
+  id           String   @id @default(cuid())
+  phoneNumber  String
+  message      String
+  messageType  String   @default("VERIFICATION")
+  status       String   @default("SENT")
+  userId       String?
+  userEmail    String?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([phoneNumber])
+  @@index([messageType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CookieConsent {
+  id          String   @id @default(cuid())
+  ipAddress   String
+  userAgent   String?
+  userId      String?
+  consentType String   @default("all")
+  acceptedAt  DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([ipAddress])
+  @@index([userId])
+  @@index([acceptedAt])
+}
+
+model TISDocument {
+  id          String   @id @default(cuid())
+  institution String
+  role        String   @default("")
+  title       String
+  description String   @default("")
+  fileUrl     String
+  fileName    String
+  fileSize    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([institution])
+  @@index([role])
+}
+
+model TISFile {
+  id          String   @id @default(cuid())
+  role        String   @default("")
+  title       String
+  description String   @default("")
+  fileUrl     String
+  fileName    String
+  fileSize    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([role])
+}
+
+model News {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  summary   String?
+  category  String
+  imageUrl  String?
+  status    String   @default("draft")
+  views     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([token])
-}
-
-// ==========================================
-// STK VE BAŞVURU YÖNETİMİ
-// ==========================================
-
-enum STKType {
-  DERNEK        // Dernek
-  VAKIF         // Vakıf
-  SENDIKA       // Sendika
-  KONFEDERASYON // Konfederasyon (DB'de mevcut)
-  MESLEK_ODA    @map("MESLEK_ODASI") // Meslek Odası
-  KOOPERATIF    // Kooperatif
-  DIGER         // Diğer
-
-  @@map("OrganizationType") // DB'deki enum adı
-}
-
-enum STKStatus {
-  PENDING   // Başvuru beklemede
-  ACTIVE    // Aktif
-  SUSPENDED // Askıya alındı
-  INACTIVE  // Pasif
-
-  @@map("OrganizationStatus") // DB'deki enum adı
-}
-
-model STK {
-  id String @id @default(cuid())
-
-  // Temel Bilgiler
-  name               String
-  slug               String?   @unique // URL dostu isim
-  adCode             String?   @unique // Mobil arama kodu (SND-1234)
-  type               STKType
-  status             STKStatus @default(PENDING)
-  registrationNumber String?   @unique // Kuruluş tescil numarası
-  taxNumber          String? // Vergi numarası
-
-  // Çok Kanallı Kredi/Kota Sistemi
-  smsCredits      Int @default(0) // SMS paketi bakiyesi
-  whatsappCredits Int @default(0) // WhatsApp mesaj bakiyesi
-  emailCredits    Int @default(0) // E-posta bakiyesi
-  pushCredits     Int @default(0) // Push bildirim bakiyesi
-
-  // İletişim Bilgileri
-  email   String
-  phone   String
-  website String?
-
-  // Adres Bilgileri
-  address    String
-  city       String
-  district   String?
-  postalCode String?
-
-  // Diğer Bilgiler
-  foundedAt   DateTime? // Kuruluş tarihi
-  logo        String?
-  description String?   @db.Text
-  documents   Json? // Belgeler (JSON array)
-
-  // Tüzük Belgesi
-  statuteFile       String? // Tüzük dosya yolu
-  statuteUploadedAt DateTime? // Tüzük yükleme tarihi
-
-  // İlişkiler
-  managerId String?  @unique
-  manager   User?    @relation("STKManager", fields: [managerId], references: [id])
-  package   Package? @relation(fields: [packageId], references: [id])
-  packageId String?
-
-  application     STKApplication?
-  boardMembers    BoardMember[]
-  boardDecisions  BoardDecision[]
-  members         Member[]
-  membershipApps  MembershipApplication[]
-  duesPlans       DuesPlan[]
-  paymentAccounts PaymentAccount[]
-  payments        Payment[]
-
-  // Zaman Damgaları
-  approvedAt          DateTime?
-  rejectedAt          DateTime?
-  rejectionReason     String?              @db.Text
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  stksectors          STKSector[]
-  competitors         Competitor[]
-  monthlySnapshots    MonthlySnapshot[]
-  messageCampaigns    MessageCampaign[]
-  memberNotifications MemberNotification[]
-  domainRequests      DomainRequest[]
-  stkDocuments        Document[]
-  duesDiscounts       DuesDiscount[]
-  generalAssemblies   GeneralAssembly[]
-  documentTemplates   DocumentTemplate[]
-  stkroles            STKRole[]
-  archives            Archive[]
-  applicationHistory  ApplicationHistory[]
-  resignationHistory  ResignationHistory[]
-  branches            STKBranch[]
-  activities          STKActivity[]
-
-  @@map("STKOrganization") // DB'deki tablo adı
   @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model ConsultantApplication {
+  id              String   @id @default(cuid())
+  name            String
+  email           String
+  phone           String?
+  category        String
+  specialization  String?
+  bio             String?
+  experienceYears Int      @default(0)
+  cvUrl           String?
+  diplomaUrl      String?
+  status          String   @default("pending")
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ConsultantPayout {
+  id             String     @id @default(cuid())
+  consultantId   String
+  period         String
+  earnedJetons   Int        @default(0)
+  jetonRate      Float      @default(0)
+  totalTL        Float      @default(0)
+  commissionRate Float      @default(0)
+  commissionTL   Float      @default(0)
+  netPayoutTL    Float      @default(0)
+  status         String     @default("pending")
+  paidAt         DateTime?
+  createdAt      DateTime   @default(now())
+  consultant     Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@unique([consultantId, period])
+  @@index([status])
+  @@index([period])
+}
+
+model PayoutRequest {
+  id            String     @id @default(cuid())
+  consultantId  String
+  amountCredits Int
+  amountTL      Float
+  jetonRate     Float
+  status        String     @default("PENDING")
+  bankDetails   String?
+  adminNote     String?
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  consultant    Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId])
+  @@index([status])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Story {
+  id        String    @id @default(cuid())
+  title     String?
+  imageUrl  String
+  linkUrl   String?
+  order     Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([isActive, order])
+}
+
+model AIUsageLog {
+  id        String   @id @default(uuid())
+  userId    String
+  module    String
+  tokenUsed Int?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
+}
+
+model BlockedUser {
+  id            String   @id @default(cuid())
+  blockerUserId String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+  blocked       User     @relation("BlockedByUser", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  blocker       User     @relation("BlockerUser", fields: [blockerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerUserId, blockedUserId])
+  @@index([blockerUserId])
+  @@index([blockedUserId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  message   String
+  updatedAt DateTime         @updatedAt
+  payload   Json?
+  type      NotificationType @default(SYSTEM)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
   @@index([type])
-  @@index([name])
+  @@index([createdAt])
+}
+
+model CareerSubscriptionPlan {
+  id                 String   @id @default(cuid())
+  name               String
+  interval           String   @default("monthly")
+  price              Float
+  yearlyPrice        Float    @default(0)
+  yearlyDiscountRate Int      @default(20)
+  description        String?
+  badgeText          String?
+  aiMatchQuota       Int      @default(5)
+  aiCvQuota          Int      @default(2)
+  cvUploadQuota      Int      @default(1)
+  aiTokens           Int      @default(100)
+  hasAiAnalyze       Boolean  @default(false)
+  hasCvBuilder       Boolean  @default(true)
+  hasJobMatching     Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  isDefault          Boolean  @default(false)
+  order              Int      @default(0)
+  storeProductId     String?
+  createdAt          DateTime @default(now())
+  careerRadarDays    Int      @default(30)
+  hasCareerRadar     Boolean  @default(false)
+  appleProductId     String?
+  googleProductId    String?
+}
+
+model KpssQuestion {
+  id            String               @id @default(cuid())
+  category      String
+  subject       String
+  questionText  String
+  options       Json
+  correctAnswer String
+  explanation   String?
+  difficulty    Int                  @default(1)
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  reports       KpssQuestionReport[]
+
+  @@unique([category, questionText])
+  @@index([category])
+  @@index([subject])
+  @@index([category, subject])
+}
+
+model KpssQuestionReport {
+  id              String       @id @default(cuid())
+  questionId      String
+  userId          String
+  userName        String?
+  reportType      String       @default("WRONG_ANSWER")
+  suggestedAnswer String?
+  message         String?
+  status          String       @default("PENDING")
+  adminNote       String?
+  createdAt       DateTime     @default(now())
+  reviewedAt      DateTime?
+  question        KpssQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([userId])
+  @@index([status])
+}
+
+model KpssExamHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  category         String
+  totalQuestions   Int
+  correct          Int
+  wrong            Int
+  blank            Int
+  netScore         Float
+  estimatedPoint   Float
+  timeSpentSeconds Int
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model SalaryParameters {
+  id                    String   @id @default("singleton")
+  baseDailyWage         Float    @default(733.33)
+  overtimeCoefficient   Float    @default(1.70)
+  nightShiftCoefficient Float    @default(0.35)
+  holidayCoefficient    Float    @default(2.0)
+  serviceBonusRate      Float    @default(0.16)
+  socialAidMonthly      Float    @default(1250.0)
+  transportDaily        Float    @default(50.0)
+  foodAidDaily          Float    @default(150.0)
+  unionDuesDays         Int      @default(1)
+  sgkEmployeeRate       Float    @default(0.14)
+  sgkUnemploymentRate   Float    @default(0.01)
+  stampTaxRate          Float    @default(0.00759)
+  minWageTaxExemption   Float    @default(3000.0)
+  updatedAt             DateTime @updatedAt
+}
+
+model STKOrganization {
+  id                           String                  @id @default(cuid())
+  name                         String
+  slug                         String                  @unique
+  type                         OrganizationType
+  status                       OrganizationStatus      @default(PENDING)
+  description                  String
+  logo                         String?
+  website                      String?
+  email                        String?
+  phone                        String?
+  city                         String
+  district                     String?
+  address                      String?
+  registrationNumber           String?
+  taxNumber                    String?
+  foundedAt                    DateTime?
+  memberCount                  Int                     @default(0)
+  topicCount                   Int                     @default(0)
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+  acceptsDonation              Boolean                 @default(false)
+  acceptsDues                  Boolean                 @default(false)
+  iban                         String?
+  paymentNote                  String?
+  requiresMembershipForFinance Boolean                 @default(true)
+  showMemberCount              Boolean                 @default(false)
+  acceptsAnnualDues            Boolean                 @default(false)
+  annualDuesNote               String?
+  donationNote                 String?
+  duesNote                     String?
+  annualDuesAmount             String?
+  monthlyDuesAmount            String?
+  bankAccountName              String?
+  consentText                  String?
+  contractPdfUrl               String?
+  isConsentActive              Boolean                 @default(false)
+  isApplicationEnabled         Boolean                 @default(true)
+  isFeatured                   Boolean                 @default(false)
+  adCode                       String?                 @unique
+  smsCredits                   Int                     @default(0)
+  whatsappCredits              Int                     @default(0)
+  emailCredits                 Int                     @default(0)
+  pushCredits                  Int                     @default(0)
+  managerId                    String?                 @unique
+  approvedAt                   DateTime?
+  rejectedAt                   DateTime?
+  rejectionReason              String?
+  statuteFile                  String?
+  statuteUploadedAt            DateTime?
+  postalCode                   String?
+  packageId                    String?
+  documents                    Json?
+  kepAddress                   String?
+  mersisNo                     String?
+  registryDecisionNo           String?
+  taxOffice                    String?
+  trademarkNo                  String?
+  featuredUntil                DateTime?
+  hasCustomWaBot               Boolean                 @default(false)
+  waBotPhone                   String?
+  waBotStatus                  String                  @default("INACTIVE")
+  waBotAutoReply               String?
+  waBotQrCode                  String?
+  stkLicenseUntil              DateTime?
+  waBotUntil                   DateTime?
+  botContactPhone              String?
+  activitiesPublic             Boolean                 @default(false)
+  branchesPublic               Boolean                 @default(true)
+  chatDisabledForMembers       Boolean                 @default(false)
+  chatPublic                   Boolean                 @default(false)
+  decisionsPublic              Boolean                 @default(false)
+  facebookUrl                  String?
+  instagramUrl                 String?
+  registrationNo               String?
+  twitterUrl                   String?
+  whatsappGroupUrl             String?
+  youtubeUrl                   String?
+  telegramUrl                  String?
+  whatsappLinks                Json?
+  hasAiAssistant               Boolean                 @default(false)
+  Member                       Member[]
+  MembershipApplication        MembershipApplication[]
+  MessageCampaign              MessageCampaign[]
+  campaigns                    NotificationCampaign[]
+  activities                   STKActivity[]
+  announcements                STKAnnouncement[]
+  applications                 STKApplication[]
+  STKAuditLog                  STKAuditLog[]
+  STKBoardDecision             STKBoardDecision[]
+  STKBoardMember               STKBoardMember[]
+  botDocuments                 STKBotDocument[]
+  botLogs                      STKBotLog[]
+  chatMessages                 STKChatMessage[]
+  STKDocument                  STKDocument[]
+  faqs                         STKFAQ[]
+  STKFinanceRecord             STKFinanceRecord[]
+  STKGeneralAssembly           STKGeneralAssembly[]
+  STKGiftNotification          STKGiftNotification[]
+  STKMessageCampaign           STKMessageCampaign[]
+  manager                      User?                   @relation("STKManager", fields: [managerId], references: [id])
+  STKPromotion                 STKPromotion[]
+  purchases                    STKPurchaseRequest[]
+  STKResignation               STKResignation[]
+  STKSmsActivation             STKSmsActivation?
+
+  @@index([type])
+  @@index([status])
   @@index([city])
+  @@index([slug])
+  @@index([isFeatured])
+}
+
+model STKFAQ {
+  id        String          @id @default(cuid())
+  question  String
+  answer    String
+  stkId     String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  stk       STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+}
+
+model STKBotLog {
+  id        String          @id @default(cuid())
+  stkId     String
+  action    String
+  details   String
+  createdAt DateTime        @default(now())
+  stk       STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model STKBotDocument {
+  id          String          @id @default(cuid())
+  title       String
+  description String
+  fileUrl     String
+  fileName    String
+  fileSize    Int             @default(0)
+  stkId       String
+  createdAt   DateTime        @default(now())
+  stk         STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+}
+
+model STKPackage {
+  id              String               @id @default(cuid())
+  name            String
+  description     String?
+  type            String               @default("QUOTA")
+  price           Float
+  smsAmount       Int                  @default(0)
+  whatsappAmount  Int                  @default(0)
+  pushAmount      Int                  @default(0)
+  emailAmount     Int                  @default(0)
+  featuredDays    Int                  @default(0)
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  durationLabel   String?
+  whatsappBotDays Int                  @default(0)
+  hasAiAssistant  Boolean              @default(false)
+  STKPromotion    STKPromotion[]
+  purchases       STKPurchaseRequest[]
+
+  @@index([isActive])
+  @@index([type])
+}
+
+model STKPurchaseRequest {
+  id             String          @id @default(cuid())
+  stkId          String
+  packageId      String
+  receiptNo      String
+  amount         Float           @default(0)
+  status         String          @default("PENDING")
+  reviewNote     String?
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  receiptFileUrl String?
+  package        STKPackage      @relation(fields: [packageId], references: [id])
+  stk            STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([status])
+  @@index([packageId])
+}
+
+model ForumCategory {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  slug        String       @unique
+  description String?
+  icon        String?
+  color       String?
+  order       Int          @default(0)
+  isActive    Boolean      @default(true)
+  topicCount  Int          @default(0)
+  postCount   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  topics      ForumTopic[]
+
+  @@index([slug])
+  @@index([order])
+}
+
+model ForumTopic {
+  id          String           @id @default(cuid())
+  title       String
+  slug        String           @unique
+  content     String
+  categoryId  String
+  authorId    String
+  authorName  String
+  status      ForumTopicStatus @default(OPEN)
+  isPinned    Boolean          @default(false)
+  viewCount   Int              @default(0)
+  replyCount  Int              @default(0)
+  lastReplyAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  likeCount   Int              @default(0)
+  isFeatured  Boolean          @default(false)
+  posts       ForumPost[]
+  reports     ForumReport[]
+  category    ForumCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  likes       ForumTopicLike[]
+
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ForumPost {
+  id           String              @id @default(cuid())
+  content      String
+  topicId      String
+  authorId     String
+  authorName   String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  dislikeCount Int                 @default(0)
+  likeCount    Int                 @default(0)
+  parentId     String?
+  parent       ForumPost?          @relation("PostReplies", fields: [parentId], references: [id])
+  replies      ForumPost[]         @relation("PostReplies")
+  topic        ForumTopic          @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reactions    ForumPostReaction[]
+  reports      ForumReport[]
+
+  @@index([topicId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model ForumPostReaction {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  type      String
+  createdAt DateTime  @default(now())
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model STKAnnouncement {
+  id          String          @id @default(cuid())
+  stkId       String
+  title       String
+  content     String
+  category    String?
+  imageUrl    String?
+  isPublished Boolean         @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  stk         STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([publishedAt])
+}
+
+model STKActivity {
+  id          String          @id @default(cuid())
+  stkId       String
+  title       String
+  content     String
+  imageUrl    String?
+  isPublished Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  date        DateTime?
+  location    String?
+  branchId    String?
+  STKBranch   STKBranch?      @relation(fields: [branchId], references: [id])
+  stk         STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([createdAt])
+  @@index([branchId])
+  @@index([date])
+  @@index([isPublished])
 }
 
 model STKApplication {
-  id    String @id @default(cuid())
-  stkId String @unique
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Başvuru Belgeleri
-  applicationLetter String? @db.Text
-  statutes          String? // Tüzük dosya yolu
-  boardResolution   String? // YK kararı dosya yolu
-  otherDocuments    Json? // Diğer belgeler
-
-  // İşlem Bilgileri
-  reviewedBy  String?
-  reviewNotes String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ==========================================
-// YÖNETİM KURULU
-// ==========================================
-
-enum BoardPosition {
-  PRESIDENT // Başkan
-  VICE_PRESIDENT // Başkan Yardımcısı
-  SECRETARY // Sekreter
-  TREASURER // Sayman
-  MEMBER // Üye
-  AUDITOR // Denetçi
-}
-
-model BoardMember {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Kişi Bilgileri
-  name     String
-  tcKimlik String? // TC Kimlik numarası (şifrelenmiş tutulmalı)
-  email    String?
-  phone    String?
-
-  // Görev Bilgileri
-  position  BoardPosition
-  startDate DateTime
-  endDate   DateTime?
-  isActive  Boolean       @default(true)
-
-  // İmza Yetkisi
-  hasSignature Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String             @id @default(cuid())
+  stkId              String
+  userId             String?
+  name               String
+  tcKimlik           String
+  phone              String
+  email              String
+  status             String             @default("PENDING")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  approvedAt         DateTime?
+  nextDuesDate       DateTime?
+  consentGiven       Boolean            @default(false)
+  signatureType      String?
+  signatureUrl       String?
+  documentUrl        String?
+  expiryDate         DateTime?
+  membershipStatus   String             @default("PENDING")
+  startDate          DateTime?
+  registrationSource String             @default("ONLINE")
+  rejectionReason    String?
+  message            String?
+  birthDate          DateTime?
+  contractUrl        String?
+  receiptUrl         String?
+  stk                STKOrganization    @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  payments           STKPaymentReport[]
 
   @@index([stkId])
-  @@index([position])
-  @@index([isActive])
+  @@index([tcKimlik])
+  @@index([status])
+  @@index([membershipStatus])
 }
 
-enum DecisionStatus {
-  DRAFT // Taslak
-  FINALIZED // Alındı (Kesinleşmiş)
-}
+model STKPaymentReport {
+  id            String         @id @default(cuid())
+  applicationId String
+  amount        Float
+  paymentType   String         @default("MONTHLY")
+  paymentDate   DateTime
+  receiptUrl    String?
+  note          String?
+  status        String         @default("PENDING")
+  reviewedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  contractUrl   String?
+  application   STKApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-model BoardDecision {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Karar Bilgileri
-  decisionNumber String // Karar numarası
-  decisionDate   DateTime // Karar tarihi
-  subject        String // Karar konusu
-  content        String?        @db.Text // Karar metni
-  description    String?        @db.Text // Ek açıklama
-  documentPath   String? // Karar belgesi dosya yolu
-  status         DecisionStatus @default(DRAFT)
-
-  // İlişkilendirme
-  relatedMemberId String? // İlgili üyelik başvurusu (eski alan, geriye uyumluluk için)
-  relatedMembers  DecisionMember[]
-
-  // İşlem Takibi
-  createdBy String?
-  updatedBy String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([stkId, decisionNumber])
-  @@index([stkId])
-  @@index([decisionDate])
+  @@index([applicationId])
   @@index([status])
 }
 
-// Karar-Üye İlişkisi
-enum DecisionMemberType {
-  MEMBERSHIP_ACCEPT // Üyelik kabulü
-  RESIGNATION_ACCEPT // İstifa kabulü
-  RESIGNATION_REJECT // İstifa reddi
-  EXPULSION // İhraç
-  OTHER // Diğer
+model ForumTopicLike {
+  id        String     @id @default(cuid())
+  topicId   String
+  userId    String
+  createdAt DateTime   @default(now())
+  topic     ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([topicId, userId])
+  @@index([userId])
 }
 
-model DecisionMember {
-  id         String             @id @default(cuid())
-  decisionId String
-  decision   BoardDecision      @relation(fields: [decisionId], references: [id], onDelete: Cascade)
-  memberId   String
-  member     Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  type       DecisionMemberType
-  notes      String?
+model ForumReport {
+  id         String      @id @default(cuid())
+  topicId    String?
+  reporterId String
+  reason     String
+  status     String      @default("PENDING")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  postId     String?
+  post       ForumPost?  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  topic      ForumTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-
-  @@unique([decisionId, memberId])
-  @@index([decisionId])
-  @@index([memberId])
-}
-
-// ==========================================
-// ÜYELİK YÖNETİMİ
-// ==========================================
-
-// Üye Kategorileri
-enum MemberCategory {
-  ASIL // Asıl üye
-  FAHRI // Fahri üye
-  ONURSAL // Onursal üye
-  KURUMSAL // Kurumsal üye
-  GENCLIK // Gençlik üyesi
-  GONULLU // Gönüllü
-}
-
-// Üye Kayıt Kaynağı
-enum RegistrationSource {
-  ONLINE    // Online başvuru
-  IN_PERSON // Yüz yüze başvuru
-  TRANSFER  // Nakil
-  FOUNDER   // Kurucu üye
-  IMPORT    // Toplu içe aktarma
-  MOBILE    // Mobil uygulama
-}
-
-enum MemberStatus {
-  APPLIED // Başvurdu
-  PENDING // Beklemede (YK kararı bekleniyor)
-  ACTIVE // Aktif üye
-  RESIGNATION_REQ // İstifa talebi
-  RESIGNED // İstifa etti
-  EXPELLED // İhraç edildi
-  INACTIVE // Pasif
-  DECEASED // Vefat
-  REJECTED // Başvuru Reddedildi
-  DELETED // Soft-delete (loglu güvenli silme)
-}
-
-model Member {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Sistem İlişkisi (Zorunlu değil, anonim/manuel eklenen üyeler için)
-  userId String?
-  user   User?   @relation("UserMemberships", fields: [userId], references: [id], onDelete: SetNull)
-
-  // Kişisel Bilgiler
-  memberNumber String? // Üye numarası (STK'ya özgü)
-  name         String
-  surname      String
-  tcKimlik     String? // TC Kimlik (şifrelenmiş)
-  email        String
-  phone        String
-  birthDate    DateTime?
-  gender       String?
-
-  // Adres Bilgileri
-  address    String?
-  city       String?
-  district   String?
-  postalCode String?
-
-  // Mesleki Bilgiler
-  occupation String?
-  workplace  String?
-  education  String?
-
-  // Üyelik Bilgileri
-  status         MemberStatus   @default(APPLIED)
-  category       MemberCategory @default(ASIL)
-  membershipType String? // Eski alan (geriye uyumluluk)
-  joinDate       DateTime? // Üyelik başlangıç tarihi
-  leaveDate      DateTime? // Ayrılış tarihi
-  leaveReason    String?        @db.Text
-
-  // Üye Kayıt Kaynağı
-  registrationSource RegistrationSource @default(ONLINE)
-  referredBy         String? // Referans veren kişi
-
-  // Islak İmza Durumu
-  wetSignatureStatus Boolean   @default(false)
-  wetSignatureDate   DateTime?
-  wetSignatureNote   String?
-
-  // KVKK
-  kvkkConsent      Boolean   @default(false)
-  kvkkConsentDate  DateTime?
-  marketingConsent Boolean   @default(false)
-
-  // Şube İlişkisi (opsiyonel)
-  branchId String?
-  branch   STKBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-
-  // İlişkiler
-  application         MembershipApplication?
-  payments            Payment[]
-  relatedDecisions    DecisionMember[]
-  notes               MemberNote[]
-  resignationHistory  ResignationHistory[]
-  assemblyAttendances AssemblyAttendee[]
-  appointedProxies    AssemblyProxy[]        @relation("AppointedProxies")
-  receivedProxies     AssemblyProxy[]        @relation("ReceivedProxies")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([stkId, memberNumber])
-  @@unique([stkId, email])
-  @@index([stkId])
-  @@index([status])
-  @@index([category])
-  @@index([name, surname])
-}
-
-model MembershipApplication {
-  id       String @id @default(cuid())
-  stkId    String
-  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-  memberId String @unique
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  // Başvuru Bilgileri
-  applicationDate DateTime @default(now())
-  applicationForm String? // Form dosya yolu
-  supportingDocs  Json? // Destekleyici belgeler
-
-  // Değerlendirme
-  status      MemberStatus @default(APPLIED)
-  reviewedBy  String?
-  reviewDate  DateTime?
-  reviewNotes String?      @db.Text
-
-  // YK Karar Bilgileri
-  boardDecisionNumber String?
-  boardDecisionDate   DateTime?
-
-  // Ret Bilgileri
-  rejectionReason    String?              @db.Text
-  applicationHistory ApplicationHistory[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
+  @@index([topicId])
+  @@index([postId])
+  @@index([reporterId])
   @@index([status])
 }
 
-// ==========================================
-// ÜYE NOTLARI (Sadece Yönetim Görür)
-// ==========================================
-
-model MemberNote {
-  id       String @id @default(cuid())
-  memberId String
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  content   String  @db.Text
-  createdBy String // Notu oluşturan yönetici
-  isPrivate Boolean @default(true) // Gizli not mu?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([memberId])
-}
-
-// ==========================================
-// PAKET VE AİDAT YÖNETİMİ
-// ==========================================
-
-enum PackageStatus {
-  ACTIVE
-  INACTIVE
-  DEPRECATED
-}
-
-model Package {
-  id String @id @default(cuid())
-
-  // Paket Bilgileri
-  name        String
-  description String?       @db.Text
-  status      PackageStatus @default(ACTIVE)
-
-  // Fiyatlandırma
-  monthlyPrice Decimal @db.Decimal(10, 2)
-  yearlyPrice  Decimal @db.Decimal(10, 2)
-  currency     String  @default("TRY")
-
-  // Özellikler
-  maxMembers      Int? // Maksimum üye sayısı (null = sınırsız)
-  maxBoardMembers Int? // Maksimum YK üyesi
-  features        Json? // Özellik listesi
-
-  // İlişkiler
-  stks STK[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-}
-
-enum DuesPeriod {
-  MONTHLY
-  QUARTERLY
-  BIANNUAL
-  YEARLY
-  CUSTOM
-}
-
-model DuesPlan {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Plan Bilgileri
-  name        String
-  description String?
-  amount      Decimal    @db.Decimal(10, 2)
-  currency    String     @default("TRY")
-  period      DuesPeriod @default(MONTHLY)
-
-  // Özel Periyot (period = CUSTOM olduğunda)
-  customPeriodDays Int?
-
-  // Durum
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-
-  // Geçerlilik
-  validFrom  DateTime  @default(now())
-  validUntil DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model NotificationCampaign {
+  id        String                @id @default(cuid())
+  title     String
+  content   String
+  channels  NotificationChannel[]
+  audience  TargetAudience        @default(ALL_MEMBERS)
+  stkId     String?
+  status    String                @default("SENT")
+  sentCount Int                   @default(0)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  stk       STKOrganization?      @relation(fields: [stkId], references: [id])
 
   @@index([stkId])
-  @@index([isActive])
+  @@index([createdAt])
 }
 
-// ==========================================
-// AİDAT AFFI VE İNDİRİM
-// ==========================================
+model CreditPackage {
+  id              String   @id @default(cuid())
+  name            String
+  jetons          Int
+  price           Float
+  isPopular       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  appleProductId  String?
+  googleProductId String?
 
-enum DiscountType {
-  FORGIVENESS // Aidat affı (tam silme)
-  DISCOUNT // Yüzde veya miktar indirimi
-  DEFERMENT // Erteleme
+  @@index([isActive, sortOrder])
 }
 
-model DuesDiscount {
-  id       String @id @default(cuid())
-  stkId    String
-  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-  memberId String
+model AppDocument {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String
+  updatedAt DateTime @updatedAt
+}
 
-  discountType    DiscountType
-  originalAmount  Decimal      @db.Decimal(10, 2)
-  discountAmount  Decimal      @db.Decimal(10, 2)
-  discountPercent Int? // Yüzde indirim ise
+model StoreTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  store         String
+  productId     String
+  transactionId String?  @unique
+  type          String
+  amount        Float    @default(0)
+  currency      String   @default("TRY")
+  status        String   @default("completed")
+  rawPayload    String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  reason         String    @db.Text
-  decisionNumber String? // YK karar numarası
-  decisionDate   DateTime?
-  approvedBy     String
+  @@index([userId])
+  @@index([transactionId])
+}
 
-  validFrom  DateTime
-  validUntil DateTime? // Erteleme için bitiş tarihi
-
-  isActive Boolean @default(true)
-
+model ApiKey {
+  id        String   @id @default(cuid())
+  provider  String
+  label     String?
+  key       String
+  status    String   @default("ACTIVE")
+  priority  Int      @default(0)
+  usageNote String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([stkId])
-  @@index([memberId])
-  @@index([discountType])
+  @@index([provider, status, priority])
 }
 
-// ==========================================
-// ÖDEME YÖNETİMİ
-// ==========================================
+model AdminNotification {
+  id         String   @id @default(cuid())
+  type       String
+  title      String
+  message    String
+  userId     String?
+  metadata   Json?
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  details    String?
+  relatedId  String?
+  senderName String?
 
-enum PaymentAccountType {
-  BANK_ACCOUNT
-  IBAN
-  CREDIT_CARD // İleride POS entegrasyonu için
-  OTHER
-}
-
-model PaymentAccount {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Hesap Bilgileri
-  type          PaymentAccountType
-  bankName      String?
-  accountName   String
-  iban          String?
-  accountNumber String?
-  branchCode    String?
-  swiftCode     String?
-
-  // Durum
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-
-  description String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([isActive])
-}
-
-enum PaymentStatus {
-  PENDING // Bekleniyor
-  CONFIRMED // Onaylandı
-  REJECTED // Reddedildi
-  CANCELLED // İptal edildi
-  REFUNDED // İade edildi
-  DELETED // Soft-delete (loglu güvenli silme)
-}
-
-enum PaymentType {
-  DUES // Aidat
-  DONATION // Bağış
-  REGISTRATION // Kayıt ücreti
-  OTHER // Diğer
-}
-
-model Payment {
-  id       String  @id @default(cuid())
-  stkId    String
-  stk      STK     @relation(fields: [stkId], references: [id], onDelete: Cascade)
-  memberId String?
-  member   Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
-
-  // Ödeme Bilgileri
-  type     PaymentType
-  amount   Decimal       @db.Decimal(10, 2)
-  currency String        @default("TRY")
-  status   PaymentStatus @default(PENDING)
-
-  // Periyot Bilgileri (aidat için)
-  periodStart DateTime?
-  periodEnd   DateTime?
-
-  // İşlem Detayları
-  paymentDate DateTime? // Ödeme yapıldığı tarih
-  dueDate     DateTime? // Son ödeme tarihi
-  confirmDate DateTime? // Onay tarihi
-
-  // Referans
-  receiptNumber  String? // Makbuz numarası
-  transactionRef String? // İşlem referansı
-  description    String?
-  notes          String? @db.Text
-
-  // Onaylayan
-  confirmedBy String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([memberId])
-  @@index([status])
   @@index([type])
-  @@index([paymentDate])
-  @@index([dueDate])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([userId])
 }
 
-// ==========================================
-// SİSTEM VE LOG YÖNETİMİ
-// ==========================================
+model ApplicationHistory {
+  id                    String                @id @default(dbgenerated("(gen_random_uuid())::text"))
+  stkId                 String
+  applicationId         String
+  status                MemberStatus
+  applicationDate       DateTime?
+  boardDecisionNumber   String?
+  boardDecisionDate     DateTime?
+  rejectionReason       String?
+  reviewNotes           String?
+  reviewedBy            String?
+  reviewDate            DateTime?
+  createdAt             DateTime              @default(now())
+  MembershipApplication MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-enum AuditAction {
-  // Kullanıcı İşlemleri
-  USER_LOGIN
-  USER_LOGOUT
-  USER_CREATE
-  USER_UPDATE
-  USER_DELETE
-  PASSWORD_CHANGE
-  PASSWORD_RESET
-
-  // STK İşlemleri
-  STK_CREATE
-  STK_UPDATE
-  STK_APPROVE
-  STK_REJECT
-  STK_SUSPEND
-  STK_ACTIVATE
-
-  // Üyelik İşlemleri
-  MEMBER_CREATE
-  MEMBER_UPDATE
-  MEMBER_APPROVE
-  MEMBER_REJECT
-  MEMBER_RESIGN
-  MEMBER_EXPEL
-  MEMBER_DELETE // Soft-delete (loglu güvenli silme)
-
-  // Ödeme İşlemleri
-  PAYMENT_CREATE
-  PAYMENT_CONFIRM
-  PAYMENT_REJECT
-  PAYMENT_CANCEL
-  PAYMENT_DELETE // Soft-delete (loglu güvenli silme)
-
-  // Diğer
-  BOARD_DECISION
-  BOARD_MEMBER_ADD
-  BOARD_MEMBER_REMOVE
-  DUES_PLAN_CREATE
-  DUES_PLAN_UPDATE
-  PACKAGE_CREATE
-  PACKAGE_UPDATE
-  SETTINGS_UPDATE
-
-  // Doküman İşlemleri
-  DOCUMENT_CREATE
-  DOCUMENT_UPDATE
-  DOCUMENT_DELETE
-  DOCUMENT_PUBLISH
-
-  // Domain İşlemleri
-  DOMAIN_REQUEST_CREATE
-  DOMAIN_REQUEST_UPDATE
+  @@index([applicationId])
+  @@index([stkId])
 }
 
 model AuditLog {
-  id String @id @default(cuid())
-
-  // İşlem Bilgileri
-  action     AuditAction
-  entityType String // User, STK, Member, Payment vb.
-  entityId   String?
-
-  // Kullanıcı Bilgileri
-  userId    String?
-  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userEmail String? // Kullanıcı silinse bile kayıt kalsın
-  userName  String?
-
-  // Detaylar
+  id          String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  action      AuditAction
+  entityType  String
+  entityId    String
+  userId      String?
+  userEmail   String?
+  userName    String?
   description String?
-  oldData     Json? // Önceki değerler
-  newData     Json? // Yeni değerler
-  metadata    Json? // Ekstra bilgiler
-
-  // Erişim Bilgileri
-  ipAddress String?
-  userAgent String?
-
-  // STK Bilgisi (çoklu tenant için)
-  stkId String?
-
-  createdAt DateTime @default(now())
+  oldData     Json?
+  newData     Json?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  stkId       String?
+  createdAt   DateTime    @default(now())
 
   @@index([action])
+  @@index([createdAt])
   @@index([entityType, entityId])
+  @@index([stkId])
   @@index([userId])
+}
+
+model Member {
+  id                    String                 @id @default(dbgenerated("(gen_random_uuid())::text"))
+  stkId                 String
+  userId                String?
+  memberNumber          String?
+  name                  String
+  surname               String
+  tcKimlik              String?
+  email                 String
+  phone                 String
+  birthDate             DateTime?
+  gender                String?
+  address               String?
+  city                  String?
+  district              String?
+  postalCode            String?
+  occupation            String?
+  workplace             String?
+  education             String?
+  status                MemberStatus           @default(APPLIED)
+  category              MemberCategory         @default(ASIL)
+  membershipType        String?
+  joinDate              DateTime?
+  leaveDate             DateTime?
+  leaveReason           String?
+  registrationSource    RegistrationSource     @default(ONLINE)
+  referredBy            String?
+  wetSignatureStatus    Boolean                @default(false)
+  wetSignatureDate      DateTime?
+  wetSignatureNote      String?
+  kvkkConsent           Boolean                @default(false)
+  kvkkConsentDate       DateTime?
+  marketingConsent      Boolean                @default(false)
+  branchId              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now())
+  premiumUntil          DateTime?
+  STKBranch             STKBranch?             @relation(fields: [branchId], references: [id], onUpdate: NoAction)
+  STKOrganization       STKOrganization        @relation(fields: [stkId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User                  User?                  @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  MembershipApplication MembershipApplication?
+  STKResignation        STKResignation[]
+
+  @@unique([stkId, email])
+  @@unique([stkId, memberNumber])
+  @@index([category])
+  @@index([name, surname])
+  @@index([status])
+  @@index([stkId])
+}
+
+model MembershipApplication {
+  id                  String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  stkId               String
+  memberId            String               @unique
+  status              MemberStatus         @default(APPLIED)
+  applicationDate     DateTime             @default(now())
+  applicationForm     Json?
+  supportingDocs      Json?
+  boardDecisionNumber String?
+  boardDecisionDate   DateTime?
+  rejectionReason     String?
+  reviewNotes         String?
+  reviewedBy          String?
+  reviewDate          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now())
+  ApplicationHistory  ApplicationHistory[]
+  Member              Member               @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  STKOrganization     STKOrganization      @relation(fields: [stkId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status])
+  @@index([stkId])
+}
+
+model MessageCampaign {
+  id              String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  stkId           String
+  title           String
+  messageType     String          @default("SMS")
+  subject         String?
+  content         String
+  targetAudience  String          @default("ALL_MEMBERS")
+  targetFilters   Json?
+  status          String          @default("SENT")
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  recipientCount  Int             @default(0)
+  deliveredCount  Int             @default(0)
+  failedCount     Int             @default(0)
+  createdById     String
+  isBlocked       Boolean         @default(false)
+  blockedReason   String?
+  blockedAt       DateTime?
+  blockedById     String?
+  channel         String?
+  smsCost         Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now())
+  User            User            @relation(fields: [createdById], references: [id], onUpdate: NoAction)
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([channel])
+  @@index([status])
+  @@index([stkId])
+}
+
+model STKBoardDecision {
+  id              String            @id
+  stkId           String
+  decisionNumber  String
+  date            DateTime
+  subject         String
+  content         String?
+  status          STKDecisionStatus @default(DRAFT)
+  createdBy       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  showOnMobile    Boolean           @default(false)
+  STKOrganization STKOrganization   @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@unique([stkId, decisionNumber])
+  @@index([date])
+  @@index([status])
+  @@index([stkId])
+}
+
+model STKBoardMember {
+  id              String          @id
+  stkId           String
+  name            String
+  title           String
+  phone           String?
+  email           String?
+  tcKimlik        String?
+  isActive        Boolean         @default(true)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@index([stkId])
+}
+
+model STKBranch {
+  id              String        @id @default(dbgenerated("concat('clr', substr(md5((random())::text), 1, 22))"))
+  stkId           String
+  name            String
+  code            String?
+  city            String
+  district        String?
+  address         String?
+  phone           String?
+  email           String?
+  managerName     String?
+  managerPhone    String?
+  managerEmail    String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  adCode          String?       @unique
+  smsCredits      Int           @default(0)
+  whatsappCredits Int           @default(0)
+  emailCredits    Int           @default(0)
+  pushCredits     Int           @default(0)
+  managerAvatar   String?
+  managerRole     String?       @default("Şube Başkanı")
+  vicePresAvatar  String?
+  vicePresName    String?
+  vicePresPhone   String?
+  vicePresRole    String?       @default("Başkan Yardımcısı")
+  showOnMobile    Boolean       @default(true)
+  Member          Member[]
+  STKActivity     STKActivity[]
+  User            User[]
+
+  @@index([adCode])
+  @@index([city])
+  @@index([isActive])
+  @@index([stkId])
+}
+
+model STKDocument {
+  id              String          @id
+  stkId           String
+  title           String
+  fileUrl         String
+  fileType        String          @default("PDF")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+}
+
+model STKGeneralAssembly {
+  id              String            @id
+  stkId           String
+  assemblyType    STKAssemblyType
+  assemblyNumber  Int
+  date            DateTime
+  location        String
+  quorum          Int
+  agenda          Json?
+  status          STKAssemblyStatus @default(PLANNED)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  STKOrganization STKOrganization   @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@unique([stkId, assemblyNumber])
+  @@index([date])
+  @@index([status])
+  @@index([stkId])
+}
+
+model STKPlatformApplication {
+  id           String    @id @default(dbgenerated("concat('clr', substr(md5((random())::text), 1, 22))"))
+  stkName      String
+  stkType      String
+  contactName  String
+  contactPhone String
+  contactEmail String
+  description  String?
+  status       String    @default("PENDING")
+  reviewedAt   DateTime?
+  reviewedBy   String?
+  reviewNote   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+
+  @@index([contactEmail])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model STKMessageCampaign {
+  id              String          @id
+  stkId           String
+  title           String
+  content         String
+  channel         MessageChannel
+  targetAudience  String          @default("ALL")
+  targetCount     Int             @default(0)
+  status          CampaignStatus  @default(SENT)
+  createdAt       DateTime        @default(now())
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
   @@index([stkId])
   @@index([createdAt])
+}
+
+model STKFinanceRecord {
+  id              String          @id @default(dbgenerated("concat('fin_', substr(md5((random())::text), 1, 22))"))
+  stkId           String
+  type            FinanceType
+  category        FinanceCategory @default(OTHER)
+  amount          Float
+  description     String?
+  date            DateTime        @default(now())
+  memberId        String?
+  createdAt       DateTime        @default(now())
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([type])
+  @@index([date])
+}
+
+model STKResignation {
+  id              String            @id @default(dbgenerated("concat('res_', substr(md5((random())::text), 1, 22))"))
+  stkId           String
+  memberId        String
+  reason          String?
+  status          ResignationStatus @default(PENDING)
+  date            DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  Member          Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  STKOrganization STKOrganization   @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([status])
+}
+
+model STKAuditLog {
+  id         String          @id @default(cuid())
+  stkId      String
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  details    Json
+  ipAddress  String?
+  createdAt  DateTime        @default(now())
+  stk        STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([stkId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model GlobalSettings {
+  id                    String   @id @default("global")
+  smsContractUrl        String?
+  smsContractExampleUrl String?
+  smsExampleDocUrl      String?
+  whatsappNumber        String?  @default("905392647655")
+  updatedAt             DateTime @updatedAt
+  openAiApiKey          String?
+  vatanSmsApiId         String?
+  vatanSmsApiKey        String?
+  vatanSmsSender        String?
+}
+
+model STKChatMessage {
+  id        String            @id @default(cuid())
+  stkId     String
+  userId    String
+  message   String
+  isDeleted Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  stk       STKOrganization   @relation(fields: [stkId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions STKChatReaction[]
+  reports   STKChatReport[]
+
+  @@index([stkId, createdAt])
+}
+
+model STKChatReport {
+  id               String         @id @default(cuid())
+  messageId        String
+  reportedByUserId String
+  reason           String
+  status           String         @default("PENDING")
+  createdAt        DateTime       @default(now())
+  message          STKChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reportedByUser   User           @relation(fields: [reportedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([status])
+}
+
+model STKChatReaction {
+  id        String         @id @default(cuid())
+  messageId String
+  userId    String
+  type      String
+  createdAt DateTime       @default(now())
+  message   STKChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+}
+
+model STKGiftNotification {
+  id              String          @id
+  stkId           String
+  title           String
+  message         String
+  giftType        String
+  giftDetails     Json
+  isRead          Boolean         @default(false)
+  isAccepted      Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  readAt          DateTime?
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([isRead])
+  @@index([stkId])
+}
+
+model STKPromotion {
+  id              String           @id
+  name            String
+  stkId           String?
+  packageId       String?
+  discountPercent Float?
+  discountAmount  Float?
+  startDate       DateTime
+  endDate         DateTime
+  message         String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime
+  STKPackage      STKPackage?      @relation(fields: [packageId], references: [id])
+  STKOrganization STKOrganization? @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([endDate])
+  @@index([isActive])
+  @@index([stkId])
+}
+
+model STKRegistration {
+  id              String   @id
+  stkName         String
+  type            String   @default("Dernek")
+  fullName        String
+  title           String?
+  phone           String
+  email           String?
+  city            String?
+  memberCount     Int?
+  message         String?
+  selectedPackage String?
+  status          String   @default("PENDING")
+  adminNote       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model STKSmsActivation {
+  id              String          @id
+  stkId           String          @unique
+  status          String          @default("PENDING")
+  requestedAt     DateTime        @default(now())
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  approvedBy      String?
+  rejectReason    String?
+  apiId           String?
+  apiKey          String?
+  sender          String?
+  STKOrganization STKOrganization @relation(fields: [stkId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model SmsLog {
+  id             String   @id
+  senderId       String?
+  senderName     String?
+  senderType     String   @default("ADMIN")
+  stkId          String?
+  recipientCount Int      @default(0)
+  phones         String[]
+  message        String
+  contentType    String?
+  status         String   @default("PENDING")
+  apiResponse    Json?
+  reportId       String?
+  deliveredCount Int?
+  failedCount    Int?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([senderType])
+  @@index([stkId])
+}
+
+enum Role {
+  USER
+  CONSULTANT
+  MODERATOR
+  ADMIN
+  STK_MANAGER
+  BRANCH_MANAGER
+  CITIZEN
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  PDF
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
 }
 
 enum NotificationType {
@@ -825,734 +2061,176 @@ enum NotificationType {
   CONSULTANT_REQUEST
 }
 
-model Notification {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Bildirim İçeriği
-  title   String
-  message String           @db.Text
-  type    NotificationType
-
-  // Durum
-  isRead Boolean   @default(false)
-  readAt DateTime?
-
-  // Bağlantı
-  link     String?
-  metadata Json?
-  icon     String?
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
 }
 
-// ==========================================
-// STK INTELLIGENCE & ANALYTICS
-// ==========================================
-
-// İş Kolları / Sektörler
-model Sector {
-  id          String  @id @default(cuid())
-  name        String  @unique // "Sağlık", "Metal", "Tekstil"
-  code        String  @unique // "HEALTH", "METAL", "TEXTILE"
-  description String?
-
-  // Referans Verileri
-  totalEmployees Int? // Sektördeki toplam çalışan (resmi kaynak)
-  lastUpdated    DateTime?
-  dataSource     String? // "TÜİK 2025", "SGK 2025"
-
-  regionalData  SectorRegionalData[]
-  stkSectors    STKSector[]
-  competitors   Competitor[]
-  userInterests UserInterest[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum MatchMessageType {
+  TEMPLATE
+  CUSTOM
 }
 
-// Kullanıcı İlgi Alanları (User-Sector many-to-many)
-model UserInterest {
-  id       String @id @default(cuid())
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sectorId String
-  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, sectorId])
-  @@index([userId])
-  @@index([sectorId])
+enum OrganizationType {
+  SENDIKA
+  DERNEK
+  VAKIF
+  KONFEDERASYON
+  MESLEK_ODASI
+  DIGER
 }
 
-// İl/Bölge Bazlı Sektör Verileri
-model SectorRegionalData {
-  id       String @id @default(cuid())
-  sectorId String
-  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-
-  city           String // İl adı
-  cityCode       String // Plaka kodu (01-81)
-  totalEmployees Int // O ildeki sektör çalışan sayısı
-  dataSource     String? // Veri kaynağı
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([sectorId, cityCode])
-  @@index([city])
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
 }
 
-// STK-Sektör İlişkisi (Bir STK birden fazla sektörde olabilir)
-model STKSector {
-  id       String @id @default(cuid())
-  stkId    String
-  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-  sectorId String
-  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-
-  isPrimary Boolean @default(false) // Ana sektör
-
-  @@unique([stkId, sectorId])
-  @@index([stkId])
-  @@index([sectorId])
+enum ForumTopicStatus {
+  OPEN
+  LOCKED
+  HIDDEN
+  DELETED
 }
 
-// Rakip STK Verileri (Anonimleştirilmiş)
-model Competitor {
-  id       String @id @default(cuid())
-  stkId    String
-  stk      STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-  sectorId String
-  sector   Sector @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-
-  name        String // "Rakip Sendika A" (gerçek isim veya takma ad)
-  memberCount Int // Bildirilen üye sayısı
-  city        String? // Güçlü olduğu il
-  dataSource  String? // "Basın Açıklaması", "Yıllık Rapor"
-  reportDate  DateTime? // Verinin tarihi
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([sectorId])
-}
-
-// Aylık İstatistik Snapshot (AI analizi için)
-model MonthlySnapshot {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  year  Int
-  month Int
-
-  // Üyelik Verileri
-  totalMembers    Int // Ay sonu toplam üye
-  newMembers      Int // O ay katılan
-  resignedMembers Int // O ay istifa eden
-  expelledMembers Int // O ay ihraç edilen
-
-  // Finansal Veriler
-  totalDuesCollected Decimal @db.Decimal(12, 2)
-  duesCollectionRate Decimal @db.Decimal(5, 2) // Tahsilat oranı %
-
-  // İl Bazlı Dağılım (JSON)
-  cityDistribution Json? // {"34": 500, "06": 300, ...}
-
-  createdAt DateTime @default(now())
-
-  @@unique([stkId, year, month])
-  @@index([stkId])
-  @@index([year, month])
-}
-
-// ==========================================
-// MESAJLAŞMA VE BİLDİRİM SİSTEMİ
-// ==========================================
-
-enum MessageType {
-  SMS
+enum NotificationChannel {
   PUSH
+  WHATSAPP
   EMAIL
 }
 
-enum MessageStatus {
-  DRAFT // Taslak
-  SCHEDULED // Zamanlanmış
-  SENDING // Gönderiliyor
-  SENT // Gönderildi
-  FAILED // Başarısız
-  CANCELLED // İptal edildi
-}
-
 enum TargetAudience {
-  ALL_ACTIVE // Tüm aktif üyeler
-  DUES_PAID // Aidatı ödenmiş
-  DUES_UNPAID // Aidatı ödenmemiş
-  CUSTOM // Özel seçim
+  ALL_MEMBERS
+  OVERDUE_DUES
+  UPCOMING_DUES
+  CUSTOM
+  INDIVIDUAL
+  ACTIVE
+  REJECTED
+  PENDING
+  INCOMPLETE_PROFILE
 }
 
-model MessageCampaign {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Mesaj Bilgileri
-  title       String // Kampanya adı (iç kullanım)
-  messageType String @default("SMS") // SMS, PUSH, EMAIL, WHATSAPP
-  subject     String? // Push/Email için başlık
-  content     String  @db.Text // Mesaj içeriği
-
-  // Hedef Kitle
-  targetAudience String @default("ALL_MEMBERS")
-  targetFilters  Json? // Özel filtreler
-
-  // Gönderim
-  status         String    @default("SENT") // DRAFT, SCHEDULED, SENDING, SENT, FAILED, CANCELLED
-  scheduledAt    DateTime? // Zamanlanmış gönderim
-  sentAt         DateTime? // Gönderim zamanı
-  recipientCount Int       @default(0)
-  deliveredCount Int       @default(0)
-  failedCount    Int       @default(0)
-
-  // Yönetici Bilgileri
-  createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
-
-  // Admin Kontrolü
-  isBlocked     Boolean   @default(false)
-  blockedReason String?
-  blockedAt     DateTime?
-  blockedById   String?
-
-  // Kanal ve Maliyet Takibi
-  channel  String? // PUSH, EMAIL, WHATSAPP, SMS
-  smsCost  Int     @default(0) // Bu kampanyanın yediği kredi miktarı
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // İlişkiler
-  recipients MessageRecipient[]
-
-  @@index([stkId])
-  @@index([status])
-  @@index([channel])
+enum AuditAction {
+  USER_LOGIN
+  USER_LOGOUT
+  USER_CREATE
+  USER_UPDATE
+  USER_DELETE
+  PASSWORD_CHANGE
+  PASSWORD_RESET
+  STK_CREATE
+  STK_UPDATE
+  STK_APPROVE
+  STK_REJECT
+  STK_SUSPEND
+  STK_ACTIVATE
+  MEMBER_CREATE
+  MEMBER_UPDATE
+  MEMBER_APPROVE
+  MEMBER_REJECT
+  MEMBER_RESIGN
+  MEMBER_EXPEL
+  PAYMENT_CREATE
+  PAYMENT_CONFIRM
+  PAYMENT_REJECT
+  PAYMENT_CANCEL
+  BOARD_DECISION
+  BOARD_MEMBER_ADD
+  BOARD_MEMBER_REMOVE
+  DUES_PLAN_CREATE
+  DUES_PLAN_UPDATE
+  PACKAGE_CREATE
+  PACKAGE_UPDATE
+  SETTINGS_UPDATE
+  DOCUMENT_CREATE
+  DOCUMENT_UPDATE
+  DOCUMENT_DELETE
+  DOCUMENT_PUBLISH
+  DOMAIN_REQUEST_CREATE
+  DOMAIN_REQUEST_UPDATE
+  MEMBER_DELETE
+  FINANCE_DELETE
+  FINANCE_UPDATE
 }
 
-model MessageRecipient {
-  id         String          @id @default(cuid())
-  campaignId String
-  campaign   MessageCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  memberId   String
-  phone      String? // SMS için
-  email      String? // Email için
-
-  // Gönderim Durumu
-  status       String    @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
-  sentAt       DateTime?
-  deliveredAt  DateTime?
-  failedReason String?
-
-  createdAt DateTime @default(now())
-
-  @@index([campaignId])
-  @@index([memberId])
+enum MemberCategory {
+  ASIL
+  FAHRI
+  ONURSAL
 }
 
-model MemberNotification {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Bildirim Bilgileri
-  title String
-  body  String @db.Text
-  type  String @default("INFO") // INFO, WARNING, DUES, ANNOUNCEMENT
-  data  Json? // Ekstra veri (link, action vb.)
-
-  // Hedef
-  memberId String? // Tek üye için
-  isGlobal Boolean @default(false) // Tüm üyeler için
-
-  // Durum
-  isRead Boolean   @default(false)
-  readAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@index([stkId])
-  @@index([memberId])
-  @@index([isRead])
+enum MemberStatus {
+  APPLIED
+  PENDING
+  ACTIVE
+  SUSPENDED
+  EXPELLED
+  RESIGNED
+  RESIGNED_BOARD
+  DECEASED
+  RESIGNATION_REQ
+  REJECTED
 }
 
-// ==========================================
-// DOMAIN & WEB SİTE TALEP SİSTEMİ
-// ==========================================
-
-enum DomainStatus {
-  PENDING // Beklemede
-  PROCESSING // İşlemde
-  COMPLETED // Tamamlandı
-  CANCELLED // İptal
+enum RegistrationSource {
+  ONLINE
+  IN_PERSON
+  TRANSFER
+  FOUNDER
+  IMPORT
+  MOBILE
 }
 
-model DomainRequest {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Talep Bilgileri
-  domain       String // İstenen domain
-  wantsWebsite Boolean @default(true) // Web sitesi de istiyor mu
-  notes        String? @db.Text // STK notu
-
-  // Durum
-  status      DomainStatus @default(PENDING)
-  adminNotes  String?      @db.Text // Admin notu
-  processedAt DateTime? // İşlem tarihi
-  processedBy String? // İşlemi yapan admin
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([status])
+enum STKAssemblyStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
-// ==========================================
-// DOKÜMAN PAYLAŞIM SİSTEMİ
-// ==========================================
-
-enum DocumentType {
-  ANNOUNCEMENT // Duyuru
-  DOCUMENT // Evrak
-  INFORMATION // Bilgilendirme
+enum STKAssemblyType {
+  OLAGAN
+  OLAGANUSTU
 }
 
-model Document {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Doküman Bilgileri
-  title       String
-  description String?      @db.Text
-  type        DocumentType @default(ANNOUNCEMENT)
-
-  // Dosya Bilgileri
-  fileUrl  String
-  fileName String
-  fileSize Int // Byte cinsinden
-  mimeType String @default("application/pdf")
-
-  // Yayın
-  isPublished Boolean   @default(false)
-  publishedAt DateTime?
-
-  // Oluşturan
-  createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([type])
-  @@index([isPublished])
+enum STKDecisionStatus {
+  DRAFT
+  FINALIZED
 }
 
-// ==========================================
-// GENEL KURUL YÖNETİMİ
-// ==========================================
-
-enum AssemblyType {
-  OLAGAN // Olağan genel kurul
-  OLAGANUSTU // Olağanüstü genel kurul
+enum MessageChannel {
+  SMS
+  PUSH
+  WHATSAPP
+  EMAIL
 }
 
-enum AssemblyStatus {
-  PLANNED // Planlandı
-  IN_PROGRESS // Devam ediyor
-  COMPLETED // Tamamlandı
-  CANCELLED // İptal edildi
+enum CampaignStatus {
+  SENT
+  FAILED
+  PENDING
 }
 
-enum AttendanceType {
-  IN_PERSON // Şahsen
-  BY_PROXY // Vekaletle
+enum FinanceType {
+  INCOME
+  EXPENSE
 }
 
-enum AttendeeStatus {
-  PENDING // Beklemede (bildirim gönderildi, cevap bekleniyor)
-  ACCEPTED // Kabul edildi (şahsen katılacak)
-  REJECTED // Reddedildi (nedeni ile birlikte)
+enum FinanceCategory {
+  DUES
+  DONATION
+  RENT
+  BILL
+  EVENT
+  OTHER
 }
 
-model GeneralAssembly {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Genel Kurul Bilgileri
-  assemblyType   AssemblyType
-  assemblyNumber Int // Kaçıncı genel kurul
-  assemblyDate   DateTime
-  location       String
-
-  // Katılım Bilgileri
-  quorumRequired Int // Toplantı yeter sayısı
-  attendeeCount  Int? // Katılımcı sayısı
-  proxyCount     Int? // Vekaletle katılım sayısı
-
-  // Tutanak
-  minutesContent String? @db.Text
-  minutesPdf     String? // PDF dosya yolu
-
-  // Durum
-  status AssemblyStatus @default(PLANNED)
-
-  // İlişkiler
-  agendaItems AssemblyAgendaItem[]
-  attendees   AssemblyAttendee[]
-  proxies     AssemblyProxy[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([stkId, assemblyNumber])
-  @@index([stkId])
-  @@index([assemblyDate])
-  @@index([status])
-}
-
-model AssemblyAgendaItem {
-  id         String          @id @default(cuid())
-  assemblyId String
-  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
-
-  orderNumber Int // Gündem sırası
-  title       String
-  description String? @db.Text
-  decision    String? @db.Text // Alınan karar
-
-  createdAt DateTime @default(now())
-
-  @@index([assemblyId])
-}
-
-model AssemblyAttendee {
-  id         String          @id @default(cuid())
-  assemblyId String
-  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
-  memberId   String
-  member     Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  attendType AttendanceType @default(IN_PERSON)
-
-  // Bildirim Onay Sistemi
-  status          AttendeeStatus @default(PENDING) // Kabul/Ret durumu
-  rejectionReason String?        @db.Text // Ret nedeni (tabloda gösterilecek)
-  respondedAt     DateTime? // Üye ne zaman cevap verdi
-
-  checkinTime DateTime?
-  signature   Boolean   @default(false) // İmza attı mı
-
-  createdAt DateTime @default(now())
-
-  @@unique([assemblyId, memberId])
-  @@index([assemblyId])
-  @@index([memberId])
-  @@index([status])
-}
-
-model AssemblyProxy {
-  id         String          @id @default(cuid())
-  assemblyId String
-  assembly   GeneralAssembly @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
-
-  giverId    String // Vekalet veren üye ID
-  receiverId String // Vekalet alan üye ID
-
-  giver    Member  @relation("AppointedProxies", fields: [giverId], references: [id], onDelete: Cascade)
-  receiver Member  @relation("ReceivedProxies", fields: [receiverId], references: [id], onDelete: Cascade)
-  proxyDoc String? // Vekaletname dosyası
-
-  isApproved Boolean   @default(false)
-  approvedBy String?
-  approvedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@unique([assemblyId, giverId])
-  @@index([assemblyId])
-  @@index([giverId])
-  @@index([receiverId])
-}
-
-// ==========================================
-// BELGE ŞABLONLARI
-// ==========================================
-
-enum TemplateCategory {
-  UYEBELGESI // Üyelik belgesi
-  AIDAT_MAKBUZU // Aidat makbuzu
-  IHTAR // İhtar yazısı
-  GENEL_YAZI // Genel yazı
-  DAVET // Davet
-  VEKALETNAME // Vekaletname
-  TUTANAK // Tutanak
-}
-
-model DocumentTemplate {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  name      String
-  category  TemplateCategory
-  content   String           @db.Text // HTML/Markdown şablon
-  variables Json? // Kullanılabilir değişkenler: {uye_adi, tarih, vb.}
-
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([category])
-  @@index([isActive])
-}
-
-// ==========================================
-// YÖNETİCİ ROL VE YETKİLERİ
-// ==========================================
-
-model STKRole {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  name        String // Başkan, Muhasip, Sekreter vb.
-  description String?
-  level       Int     @default(1) // Yetki seviyesi (1-10)
-
-  // İzinler JSON formatında
-  // Örnek: ["MEMBER_VIEW", "MEMBER_EDIT", "PAYMENT_CREATE", "DECISION_APPROVE"]
-  permissions Json @default("[]")
-
-  isDefault Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([stkId, name])
-  @@index([stkId])
-}
-
-// ==========================================
-// YIL BAZLI ARŞİVLEME
-// ==========================================
-
-enum RecordType {
-  MEMBER // Üye kaydı
-  PAYMENT // Ödeme kaydı
-  DECISION // Karar kaydı
-  ASSEMBLY // Genel kurul
-  DOCUMENT // Belge
-}
-
-model Archive {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  year       Int
-  recordType RecordType
-  recordId   String // Orijinal kayıt ID'si
-  snapshot   Json // Kayıt anlık görüntüsü
-
-  isLocked   Boolean   @default(false)
-  lockedAt   DateTime?
-  lockedBy   String?
-  lockReason String?
-
-  createdAt DateTime @default(now())
-
-  @@unique([stkId, recordType, recordId])
-  @@index([stkId])
-  @@index([year])
-  @@index([recordType])
-  @@index([isLocked])
-}
-
-// ==========================================
-// BAŞVURU GEÇMİŞİ LOGLARI
-// ==========================================
-
-model ApplicationHistory {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  applicationId String
-  application   MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  // Snapshot Veriler
-  status              MemberStatus
-  applicationDate     DateTime?
-  boardDecisionNumber String?
-  boardDecisionDate   DateTime?
-  rejectionReason     String?
-  reviewNotes         String?
-  reviewedBy          String?
-  reviewDate          DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@index([stkId])
-  @@index([applicationId])
-}
-
-model ResignationHistory {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  memberId String
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  // Snapshot
-  resignationDate DateTime // The time of resignation (or request)
-  leaveReason     String?
-  status          MemberStatus // RESIGNED or REQ
-
-  // Decision Info (if finalized)
-  boardDecisionNumber String?
-  boardDecisionDate   DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@index([stkId])
-  @@index([memberId])
-}
-
-// ==========================================
-// ŞUBE / TEMSİLCİLİK YÖNETİMİ
-// ==========================================
-
-model STKBranch {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Şube Bilgileri
-  name     String  // Örn: "Ankara 1 Nolu Şube", "İstanbul Anadolu Temsilciliği"
-  code     String? // Şube kodu (opsiyonel: "ANK-01")
-  adCode   String? @unique // Mobil arama kodu (SND-1234-ANK01)
-  city     String
-  district String?
-  address  String?
-  phone    String?
-  email    String?
-
-  // Çok Kanallı Kredi/Kota Sistemi (Şube bazlı)
-  smsCredits      Int @default(0)
-  whatsappCredits Int @default(0)
-  emailCredits    Int @default(0)
-  pushCredits     Int @default(0)
-
-  // Şube Yöneticisi
-  managerName  String? // Şube başkanı adı
-  managerPhone String?
-  managerEmail String?
-
-  // Durum
-  isActive Boolean @default(true)
-
-  // İlişkiler
-  members        Member[]
-  branchManagers User[]        @relation("BranchManagers")
-  activities     STKActivity[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([stkId, code])
-  @@index([stkId])
-  @@index([city])
-  @@index([isActive])
-  @@index([adCode])
-}
-
-// ==========================================
-// FALİYETLER / ETKİNLİKLER
-// ==========================================
-
-model STKActivity {
-  id    String @id @default(cuid())
-  stkId String
-  stk   STK    @relation(fields: [stkId], references: [id], onDelete: Cascade)
-
-  // Opsiyonel şube bağlantısı (şube faaliyeti ise)
-  branchId String?
-  branch   STKBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-
-  // Faaliyet Bilgileri
-  title       String
-  content     String?   @db.Text // Açıklama/İçerik
-  date        DateTime? // Etkinlik tarihi
-  location    String?   // Etkinlik yeri
-  imageUrl    String?   // Kapak görseli
-  isPublished Boolean   @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([stkId])
-  @@index([branchId])
-  @@index([date])
-  @@index([isPublished])
-}
-
-// ==========================================
-// PLATFORM BAŞVURULARI (Landing Page)
-// ==========================================
-
-model STKPlatformApplication {
-  id String @id @default(cuid())
-
-  // STK Bilgileri
-  stkName String // Kuruluş adı
-  stkType String // DERNEK, VAKIF, SENDIKA, MESLEK_ODA, KOOPERATIF, DIGER
-
-  // Yetkili Kişi Bilgileri
-  contactName  String
-  contactPhone String
-  contactEmail String
-
-  // Opsiyonel
-  description String? @db.Text
-
-  // Başvuru Durumu
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  reviewNote  String?  @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-  @@index([contactEmail])
-  @@index([createdAt])
+enum ResignationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

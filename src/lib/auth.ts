@@ -1,227 +1,90 @@
-import { SignJWT, jwtVerify } from 'jose'
-import { cookies } from 'next/headers'
-import bcrypt from 'bcryptjs'
-import { UserRole, UserStatus } from '@prisma/client'
-import prisma from './prisma'
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "./prisma";
+import { verifyDjangoPassword } from "./pbkdf2";
+import bcrypt from "bcryptjs";
 
-// JWT Configuration
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-)
-const JWT_EXPIRES_IN = '7d'
-const COOKIE_NAME = 'auth-token'
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "E-posta", type: "email" },
+        password: { label: "Şifre", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
 
-// Types
-export interface JWTPayload {
-    userId: string
-    email: string
-    role: UserRole
-    stkId?: string
-    iat?: number
-    exp?: number
-}
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
 
-export interface AuthUser {
-    id: string
-    email: string
-    name: string
-    role: UserRole
-    status: UserStatus
-    stkId?: string
-    avatar?: string
-}
+        if (!user || !user.isActive) return null;
 
-// Password Hashing
-export async function hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 12)
-}
+        // ADMIN, MODERATOR, CONSULTANT ve STK_MANAGER girebilir
+        if (!["ADMIN", "MODERATOR", "CONSULTANT", "STK_MANAGER"].includes(user.role)) return null;
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword)
-}
-
-// JWT Token Management
-export async function createToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promise<string> {
-    const token = await new SignJWT(payload as Record<string, unknown>)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(JWT_EXPIRES_IN)
-        .sign(JWT_SECRET)
-
-    return token
-}
-
-export async function verifyToken(token: string): Promise<JWTPayload | null> {
-    try {
-        const { payload } = await jwtVerify(token, JWT_SECRET)
-        return payload as unknown as JWTPayload
-    } catch (error) {
-        console.log('Auth Debug: Token verification failed:', error)
-        return null
-    }
-}
-
-// Session Management
-export async function setAuthCookie(token: string): Promise<void> {
-    const cookieStore = await cookies()
-    cookieStore.set(COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-}
-
-export async function getAuthCookie(): Promise<string | null> {
-    const cookieStore = await cookies()
-    const token = cookieStore.get(COOKIE_NAME)?.value || null
-    console.log('Auth Debug: Cookie retrieved:', token ? 'Token exists' : 'No token')
-    return token
-}
-
-export async function removeAuthCookie(): Promise<void> {
-    const cookieStore = await cookies()
-    cookieStore.delete(COOKIE_NAME)
-}
-
-// Get Current User
-export async function getCurrentUser(): Promise<AuthUser | null> {
-    console.log('Auth Debug: getCurrentUser started')
-    const token = await getAuthCookie()
-    if (!token) {
-        console.log('Auth Debug: No token found in cookie')
-        return null
-    }
-
-    const payload = await verifyToken(token)
-    if (!payload) {
-        console.log('Auth Debug: Token invalid or payload null')
-        return null
-    }
-    console.log('Auth Debug: Token valid, payload userId:', payload.userId)
-
-    const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            status: true,
-            avatar: true,
-            stk: {
-                select: { id: true }
-            }
+        // Dual password verification: bcrypt ($2b$) veya Django PBKDF2
+        let isValid = false;
+        if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+          isValid = await bcrypt.compare(credentials.password, user.password);
+        } else {
+          isValid = verifyDjangoPassword(credentials.password, user.password);
         }
-    })
+        if (!isValid) return null;
 
-    if (!user || (user.status !== 'ACTIVE' && user.status !== 'PENDING')) return null;
-
-    return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        status: user.status,
-        stkId: user.stk?.id,
-        avatar: user.avatar || undefined
-    }
-}
-
-// Login
-export async function login(email: string, password: string): Promise<{ success: boolean; token?: string; user?: AuthUser; error?: string }> {
-    const user = await prisma.user.findUnique({
-        where: { email },
-        include: {
-            stk: {
-                select: { id: true, status: true }
-            }
-        }
-    })
-
-    if (!user) {
-        return { success: false, error: 'Kullanıcı bulunamadı' }
-    }
-
-    const isValidPassword = await verifyPassword(password, user.password)
-    if (!isValidPassword) {
-        return { success: false, error: 'Geçersiz şifre' }
-    }
-
-    if (user.status !== 'ACTIVE') {
-        return { success: false, error: 'Hesabınız aktif değil' }
-    }
-
-    // STK Manager için STK durumu kontrolü
-    if (user.role === 'STK_MANAGER' && user.stk) {
-        if (user.stk.status !== 'ACTIVE' && user.stk.status !== 'APPROVED') {
-            return { success: false, error: 'STK hesabınız aktif değil' }
-        }
-    }
-
-    const token = await createToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        stkId: user.stk?.id
-    })
-
-    // Update last login
-    await prisma.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() }
-    })
-
-    await setAuthCookie(token)
-
-    return {
-        success: true,
-        token,
-        user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            status: user.status,
-            stkId: user.stk?.id,
-            avatar: user.avatar || undefined
-        }
-    }
-}
-
-// Logout
-export async function logout(): Promise<void> {
-    await removeAuthCookie()
-}
-
-// Register (STK Manager)
-export async function register(data: {
-    email: string
-    password: string
-    name: string
-    phone?: string
-}): Promise<{ success: boolean; userId?: string; error?: string }> {
-    const existingUser = await prisma.user.findUnique({
-        where: { email: data.email }
-    })
-
-    if (existingUser) {
-        return { success: false, error: 'Bu e-posta adresi zaten kullanılıyor' }
-    }
-
-    const hashedPassword = await hashPassword(data.password)
-
-    const user = await prisma.user.create({
-        data: {
-            email: data.email,
-            password: hashedPassword,
-            name: data.name,
-            phone: data.phone,
-            role: 'STK_MANAGER',
-            status: 'PENDING'
-        }
-    })
-
-    return { success: true, userId: user.id }
-}
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          role: user.role,
+          managedStkId: (user as any).managedStkId || null,
+        };
+      },
+    }),
+  ],
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+        token.id = user.id;
+        token.managedStkId = (user as any).managedStkId || null;
+      }
+      // STK_MANAGER ise her token yenilemede managedStkId'yi DB'den güncelle
+      if (token.role === "STK_MANAGER" && token.id) {
+        try {
+          const { prisma: db } = await import("@/lib/prisma");
+          // Önce STKOrganization.managerId ile bul
+          const byManager = await db.sTKOrganization.findFirst({
+            where: { managerId: token.id as string },
+            select: { id: true },
+          });
+          if (byManager) {
+            token.managedStkId = byManager.id;
+          } else {
+            // User.managedStkId ile bul
+            const u = await db.user.findUnique({
+              where: { id: token.id as string },
+              select: { managedStkId: true },
+            });
+            token.managedStkId = u?.managedStkId || null;
+          }
+        } catch {}
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).role = token.role as string;
+        (session.user as any).id = token.id as string;
+        (session.user as any).managedStkId = token.managedStkId || null;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
