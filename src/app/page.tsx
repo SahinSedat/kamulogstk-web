@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Search, MapPin, X, Building, Facebook, Instagram, Twitter, MessageCircle, Send, CheckCircle2, ChevronRight, HandCoins, ShieldCheck, Zap, Users, Megaphone, Handshake, Heart, Scale, GraduationCap, ArrowRight } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -10,6 +12,7 @@ export default function STKDirectoryPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedStk, setSelectedStk] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchStks();
@@ -44,13 +47,7 @@ export default function STKDirectoryPage() {
       <nav className="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-40 transition-all">
         <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#059669] to-[#10b981] shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white font-extrabold text-xl">
-              K
-            </div>
-            <div>
-              <span className="text-xl font-extrabold text-slate-800 tracking-tight leading-none block">KamuLog</span>
-              <span className="text-[11px] font-semibold text-[#059669] uppercase tracking-wider">STK Platformu</span>
-            </div>
+            <Image src="/logo.png" alt="Kamulog Logo" width={150} height={40} className="object-contain" />
           </div>
           <div className="flex items-center gap-6">
             <a href="#nasil-calisir" className="text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors hidden md:block">
@@ -84,25 +81,33 @@ export default function STKDirectoryPage() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#059669] to-[#34d399]">Tek Platformda Keşfedin</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-            Dernek, sendika ve vakıfları inceleyin, aidatlarını karşılaştırın ve karmaşık formlarla uğraşmadan saniyeler içinde üyelik başvurunuzu tamamlayın.
+            Sizin için en doğru dernek, sendika veya vakfı keşfedin. İnandığınız değerler için harekete geçin ve karmaşık formlarla uğraşmadan saniyeler içinde toplumsal dayanışmanın bir parçası olun.
           </p>
           
           {/* Main Search Bar inside Hero */}
-          <div id="search-section" className="max-w-2xl mx-auto relative group scroll-mt-32">
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-              <Search className="h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-            </div>
+          <form 
+            id="search-section" 
+            className="max-w-2xl mx-auto relative group scroll-mt-32"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (search.trim()) {
+                console.log("Aranan kelime:", search);
+                router.push(`/arama?q=${encodeURIComponent(search.trim())}`);
+              }
+            }}
+          >
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
             <input
               type="text"
               placeholder="Dernek, sendika veya vakıf arayın..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
+              className="w-full h-16 pl-12 pr-28 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
             />
-            <button className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] transition-colors shadow-sm">
+            <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] transition-colors shadow-sm">
               Ara
             </button>
-          </div>
+          </form>
         </div>
       </div>
 
