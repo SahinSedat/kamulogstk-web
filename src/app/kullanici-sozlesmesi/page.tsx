@@ -1,46 +1,76 @@
-import { prisma } from "@/lib/prisma"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import React from "react";
+import Link from "next/link";
 
 export const metadata = {
-  title: "Kullanıcı Sözleşmesi | KamuLog STK",
-  description: "KamuLog STK Kullanıcı Sözleşmesi",
-}
+  title: "Kullanıcı ve Üyelik Sözleşmesi - Kamulog STK",
+  description: "Kamulog STK platformu resmi Kullanıcı ve Üyelik Sözleşmesi.",
+};
 
-export default async function TermsOfServicePage() {
-  const doc = await prisma.appDocument.findFirst({
-    where: { slug: "terms-of-service" }
-  })
-
-  if (!doc) {
-    notFound()
-  }
-
+export default function KullaniciSozlesmesiPage() {
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0a0e1a 100%)' }}>
-      <header className="border-b border-white/5 backdrop-blur-2xl sticky top-0 z-50" style={{ background: 'rgba(10,14,26,0.85)' }}>
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
-              <span className="text-white text-lg font-bold">K</span>
-            </div>
-            <span className="text-lg font-bold text-white">KamuLog</span>
-          </Link>
-          <Link href="/" className="text-sm text-slate-400 hover:text-white transition">
-            Ana Sayfaya Dön
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-12">
+    <div className="min-h-screen bg-slate-50 py-12 lg:py-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4">{doc.title}</h1>
-          <p className="text-slate-400">Son Güncelleme: {new Date(doc.updatedAt).toLocaleDateString('tr-TR')}</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+            Kamulog STK Kullanıcı ve Üyelik Sözleşmesi
+          </h1>
+          <p className="text-slate-500">Yürürlük Tarihi: {new Date().toLocaleDateString('tr-TR')}</p>
         </div>
-        <div className="bg-white/5 rounded-2xl p-6 md:p-10 border border-white/10 prose prose-invert prose-emerald max-w-none">
-          <div dangerouslySetInnerHTML={{ __html: doc.content || "İçerik henüz eklenmedi." }} />
+
+        {/* Content */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-12 prose prose-slate prose-emerald max-w-none">
+          
+          <h2 className="text-2xl font-bold text-slate-800 mt-0 mb-4 border-b pb-2">1. Taraflar</h2>
+          <p>
+            İşbu sözleşme, <strong>Atatürk Mah. Çelikel Sk. Esbender Şahin Apt. No: 5 İç Kapı No: 2 Sancaktepe / İstanbul</strong> adresinde faaliyet gösteren <strong>Kamulog</strong> (Şahıs Şirketi / Yasal Yetkili: Suat Hayri Şahin) ile Kamulog STK platformuna ("Platform") üye olan veya ziyaret eden Kullanıcı arasında elektronik ortamda onaylanarak yürürlüğe girmiştir.
+          </p>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">2. Sözleşmenin Amacı</h2>
+          <p>
+            Bu sözleşmenin amacı; Kullanıcının Platform üzerinde yer alan Sivil Toplum Kuruluşlarını (Dernek, Sendika, Vakıf vb.) bulması, incelemesi, üyelik başvurusu yapması ve aidat ödemesi süreçlerinde tarafların hak ve yükümlülüklerini belirlemektir. Kamulog, STK'lar ile vatandaşları dijital ortamda bir araya getiren bir <strong>aracı hizmet sağlayıcıdır</strong>.
+          </p>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">3. Tarafların Hak ve Yükümlülükleri</h2>
+          
+          <h3 className="text-lg font-bold text-slate-800 mt-6">3.1. Kullanıcının Yükümlülükleri</h3>
+          <ul className="list-disc pl-5 space-y-2 text-slate-700">
+            <li>Kullanıcı, Platforma üye olurken veya STK başvurusu yaparken verdiği bilgilerin (T.C. Kimlik No, İletişim, Ad-Soyad vb.) doğru ve kendisine ait olduğunu beyan ve taahhüt eder.</li>
+            <li>Platform üzerinden yapılan başvuruların onaylanması veya reddedilmesi tamamen ilgili STK'nın inisiyatifindedir. Kamulog, üyelik başvurularının sonucu hakkında garanti vermez.</li>
+            <li>Kullanıcı, hesabının güvenliğinden bizzat sorumludur. Hesabının üçüncü kişilerce yetkisiz kullanımından doğacak zararlardan Kamulog sorumlu tutulamaz.</li>
+            <li>Kullanıcı, platformu Türkiye Cumhuriyeti yasalarına, ahlaka ve kamu düzenine aykırı şekilde kullanamaz.</li>
+          </ul>
+
+          <h3 className="text-lg font-bold text-slate-800 mt-6">3.2. Kamulog'un Hak ve Yükümlülükleri</h3>
+          <ul className="list-disc pl-5 space-y-2 text-slate-700">
+            <li>Kamulog, Kullanıcının başvuru ve evraklarını sadece kullanıcının seçtiği ve onay verdiği ilgili Sivil Toplum Kuruluşu ile paylaşmakla yükümlüdür.</li>
+            <li>Kamulog, platformun kesintisiz ve hatasız çalışması için makul çabayı gösterir ancak teknik arızalar, siber saldırılar veya mücbir sebeplerden doğan kesintilerden sorumlu tutulamaz.</li>
+            <li>Kamulog, gerekli gördüğü takdirde platformun tasarımında, işleyişinde değişiklik yapma veya siteyi geçici olarak durdurma hakkını saklı tutar.</li>
+          </ul>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">4. Telif Hakları (Fikri Mülkiyet)</h2>
+          <p>
+            Kamulog STK platformunda yer alan yazılım kodları, arayüz tasarımları, veritabanı yapısı, logolar ve metinler Kamulog şirketinin mülkiyetindedir. Kullanıcılar, platform içeriğini izinsiz kopyalayamaz, çoğaltamaz veya ticari amaçla kullanamaz. Sitede listelenen STK'lara ait logolar ve isim hakları ise kendi sahiplerine aittir.
+          </p>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">5. Veri Gizliliği (KVKK)</h2>
+          <p>
+            Kullanıcının platformda paylaştığı veriler, 6698 sayılı KVKK kapsamında işlenmekte ve saklanmaktadır. Veri işleme şartları ve haklarınız hakkında detaylı bilgi için lütfen <Link href="/kvkk" className="text-emerald-600 hover:underline">KVKK Aydınlatma Metni</Link>'ni inceleyiniz.
+          </p>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">6. Uyuşmazlıkların Çözümü</h2>
+          <p>
+            İşbu sözleşmenin uygulanmasından veya yorumlanmasından doğacak her türlü uyuşmazlığın çözümünde Türk Hukuku uygulanacak olup, <strong>İstanbul Mahkemeleri ve İcra Daireleri</strong> kesin ve münhasıran yetkilidir.
+          </p>
+
+          <h2 className="text-2xl font-bold text-slate-800 mt-10 mb-4 border-b pb-2">7. Yürürlük</h2>
+          <p>
+            Kullanıcı, üyelik formunu doldurarak veya platform üzerinden STK başvurusu yaparak, bu sözleşmede yer alan tüm maddeleri okuduğunu, anladığını ve elektronik ortamda onayladığını kabul etmiş sayılır.
+          </p>
+
         </div>
-      </main>
+      </div>
     </div>
-  )
+  );
 }

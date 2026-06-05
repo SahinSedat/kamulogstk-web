@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 @theme {
   /* Blue Scale */
   --color-blue-900: #1E3A5F;

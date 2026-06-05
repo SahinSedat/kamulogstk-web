@@ -604,7 +604,7 @@ export default function STKDirectoryPage() {
               <h4 className="font-semibold text-slate-900 mb-6 tracking-wide">Yasal</h4>
               <ul className="space-y-4">
                 <li><Link href="/kvkk" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">KVKK Aydınlatma Metni</Link></li>
-                <li><Link href="/gizlilik-politikasi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Gizlilik Sözleşmesi</Link></li>
+                <li><Link href="/gizlilik" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Gizlilik Sözleşmesi</Link></li>
                 <li><Link href="/kullanici-sozlesmesi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kullanıcı ve Üyelik Sözleşmesi</Link></li>
                 <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Çerez (Cookie) Politikası</Link></li>
                 <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İptal ve İade Koşulları</Link></li>
