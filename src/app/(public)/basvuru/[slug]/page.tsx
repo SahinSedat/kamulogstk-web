@@ -194,33 +194,24 @@ export default function STKApplicationPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">İsim Soyisim <span className="text-red-500">*</span></label>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><User className="w-4 h-4 text-slate-400" /> İsim Soyisim <span className="text-red-500">*</span></label>
                     <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="Kimlikteki adınız" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">T.C. Kimlik No <span className="text-red-500">*</span></label>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
                     <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="date" required value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
-                    </div>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
+                    <input type="date" required value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Cep Telefonu <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="05XX XXX XX XX" />
-                    </div>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
+                    <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="05XX XXX XX XX" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">E-posta Adresi <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="ornek@posta.com" />
-                    </div>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Mail className="w-4 h-4 text-slate-400" /> E-posta Adresi <span className="text-red-500">*</span></label>
+                    <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="ornek@posta.com" />
                   </div>
                 </div>
               </div>
