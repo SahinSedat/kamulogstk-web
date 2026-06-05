@@ -120,6 +120,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         savedReceiptUrl = await saveSignatureFile(receiptUrl, `dekont_${existing.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
       }
 
+      const generatedReceiptNumber = `DKNT-${Math.floor(100000 + Math.random() * 900000)}`;
+
       for (const pType of selectedPayments) {
         let amount = 0;
         let paymentTypeEnum = "DONATION";
@@ -133,7 +135,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
             paymentType: paymentTypeEnum,
             paymentDate: new Date(),
             receiptUrl: savedReceiptUrl,
-            status: "PENDING"
+            status: "PENDING",
+            note: `Sistem Tarafından Üretilen Dekont No: ${generatedReceiptNumber}`
           }
         });
       }
@@ -146,12 +149,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         stkName: stk.name,
         stkId: stk.id,
         userId: existing.userId || undefined,
+        receiptNumber: generatedReceiptNumber
       }).catch(e => console.error("[STK Payment Notify] Hata:", e));
 
       return NextResponse.json(
         {
           success: true,
           message: `Ödeme bildiriminiz ${stk.name} yönetimine başarıyla iletilmiştir.`,
+          receiptNumber: generatedReceiptNumber
         },
         { status: 200 }
       );

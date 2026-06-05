@@ -14,6 +14,10 @@ export async function sendDynamicWaMessage(
   stkId?: string | null,
 ): Promise<{ sent: boolean; via: "stk_bot" | "global_bot"; error?: string }> {
   try {
+    let formattedPhone = phone.replace(/\D/g, "");
+    if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
+    if (!formattedPhone.startsWith("90")) formattedPhone = "90" + formattedPhone;
+
     // STK ID varsa, kendi botu bağlı mı kontrol et
     if (stkId) {
       const stk = await prisma.sTKOrganization.findUnique({
@@ -27,16 +31,16 @@ export async function sendDynamicWaMessage(
           const res = await fetch(`${STK_BOT_URL}/send-message`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ stkId, phone, message }),
+            body: JSON.stringify({ stkId, phone: formattedPhone, message }),
             signal: AbortSignal.timeout(15000),
           });
           const data = await res.json();
           if (data.success) {
-            console.log(`[WA-Router] ✅ STK Bot → ${phone} (stkId: ${stkId})`);
+            console.log(`[WA-Router] ✅ STK Bot → ${formattedPhone} (stkId: ${stkId})`);
             return { sent: true, via: "stk_bot" };
           }
           // STK botu başarısız olursa global'e düş
-          console.warn(`[WA-Router] ⚠️ STK Bot başarısız, Global'e düşülüyor → ${phone}`);
+          console.warn(`[WA-Router] ⚠️ STK Bot başarısız, Global'e düşülüyor → ${formattedPhone}`);
         } catch (e) {
           console.error(`[WA-Router] STK Bot erişim hatası:`, e instanceof Error ? e.message : e);
           // Fallback: Global Bot'a düş
@@ -48,11 +52,11 @@ export async function sendDynamicWaMessage(
     const res = await fetch(`${GLOBAL_BOT_URL}/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, message }),
+      body: JSON.stringify({ phone: formattedPhone, message }),
       signal: AbortSignal.timeout(10000),
     });
     const data = await res.json();
-    console.log(`[WA-Router] ${data.sent ? "✅" : "⚠️"} Global Bot → ${phone}`);
+    console.log(`[WA-Router] ${data.sent ? "✅" : "⚠️"} Global Bot → ${formattedPhone}`);
     return { sent: !!data.sent, via: "global_bot" };
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);

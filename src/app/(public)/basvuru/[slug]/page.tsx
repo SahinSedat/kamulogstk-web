@@ -29,6 +29,7 @@ export default function STKApplicationPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
+  const [receiptNumber, setReceiptNumber] = useState("");
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [contractBase64, setContractBase64] = useState<string>("");
 
@@ -161,6 +162,9 @@ export default function STKApplicationPage() {
 
       if (res.ok && data.success) {
         setSuccess(true);
+        if (data.receiptNumber) {
+          setReceiptNumber(data.receiptNumber);
+        }
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         setError(data.error || "Başvuru sırasında bir hata oluştu.");
@@ -199,10 +203,20 @@ export default function STKApplicationPage() {
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">Başvurunuz Alındı!</h2>
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            {stk?.name} kuruluşuna yapmış olduğunuz üyelik başvurusu başarıyla iletilmiştir. Yetkililer belgelerinizi inceledikten sonra sizinle iletişime geçecektir.
+          <h2 className="text-2xl font-bold text-slate-800 mb-4">
+            {isOnlyPayment ? "Aidat Ödemeniz Alındı!" : "Başvurunuz Alındı!"}
+          </h2>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            {isOnlyPayment 
+              ? `${stk?.name} kuruluşuna yapmış olduğunuz aidat/bağış bildiriminiz başarıyla iletilmiştir. Yetkililer dekontunuzu inceledikten sonra onaylayacaktır.`
+              : `${stk?.name} kuruluşuna yapmış olduğunuz üyelik başvurusu başarıyla iletilmiştir. Yetkililer belgelerinizi inceledikten sonra sizinle iletişime geçecektir.`}
           </p>
+          {isOnlyPayment && receiptNumber && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-8">
+              <p className="text-sm text-emerald-800 font-medium mb-1">Dekont / İşlem Numarası</p>
+              <p className="text-xl font-bold text-emerald-700 tracking-wider font-mono">{receiptNumber}</p>
+            </div>
+          )}
           <button onClick={() => router.push("/")} className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/30">
             Anasayfaya Dön
           </button>

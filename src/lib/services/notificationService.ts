@@ -767,6 +767,7 @@ export async function sendSTKPaymentReceivedNotification(params: {
     stkName: string;
     userId?: string;
     stkId?: string;
+    receiptNumber?: string;
 }) {
     if (params.userId) {
         try {
@@ -796,6 +797,7 @@ export async function sendSTKPaymentReceivedNotification(params: {
                     <div style="background:#f9fafb;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
                         <p style="color:#374151;font-size:15px;line-height:1.6;">Merhaba <strong>${params.applicantName}</strong>,</p>
                         <p style="color:#374151;font-size:15px;line-height:1.6;"><strong>${params.stkName}</strong> adına yapmış olduğunuz aidat/bağış bildiriminiz başarıyla alınmıştır. 🎉</p>
+                        ${params.receiptNumber ? `<p style="color:#374151;font-size:15px;line-height:1.6;"><strong>İşlem Numarası:</strong> <span style="font-family:monospace;background:#e0f2fe;padding:2px 6px;border-radius:4px;color:#0369a1;">${params.receiptNumber}</span></p>` : ''}
                         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:16px 0;">
                             <p style="color:#6b7280;font-size:13px;margin:0 0 8px;">📋 Bildirim Durumu</p>
                             <p style="color:#F59E0B;font-size:16px;font-weight:bold;margin:0;">⏳ İnceleniyor</p>
@@ -817,6 +819,7 @@ export async function sendSTKPaymentReceivedNotification(params: {
             `💰 *Ödeme Bildirimi Alındı*\n\n` +
             `Merhaba ${params.applicantName},\n` +
             `*${params.stkName}* kuruluşuna yapmış olduğunuz aidat/bağış bildiriminiz başarıyla alınmıştır.\n\n` +
+            (params.receiptNumber ? `📝 *İşlem Numarası:* ${params.receiptNumber}\n\n` : '') +
             `Bildiriminiz kuruluş yetkilileri tarafından incelenmek üzere onaya gönderilmiştir. ⏳`;
 
         await sendDynamicWaMessage(params.applicantPhone, message, params.stkId);
