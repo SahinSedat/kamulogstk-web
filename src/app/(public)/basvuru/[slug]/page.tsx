@@ -99,12 +99,18 @@ export default function STKApplicationPage() {
     const errors: string[] = [];
 
     // Validation
-    if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email || (!isOnlyPayment && !formData.birthDate)) {
-      errors.push("Lütfen tüm zorunlu kimlik ve iletişim bilgilerinizi doldurun.");
-    }
+    if (isOnlyPayment) {
+      if (!formData.phone || !formData.email) {
+        errors.push("Ödeme bildirimi için Telefon Numaranızı ve E-posta adresinizi girmelisiniz.");
+      }
+    } else {
+      if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email || !formData.birthDate) {
+        errors.push("Lütfen tüm zorunlu kimlik ve iletişim bilgilerinizi doldurun.");
+      }
 
-    if (formData.tcKimlik && formData.tcKimlik.length !== 11) {
-      errors.push("T.C. Kimlik No 11 haneli olmalıdır.");
+      if (formData.tcKimlik && formData.tcKimlik.length !== 11) {
+        errors.push("T.C. Kimlik No 11 haneli olmalıdır.");
+      }
     }
 
     if (formData.phone && formData.phone.length !== 11) {
@@ -270,20 +276,24 @@ export default function STKApplicationPage() {
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <User className="w-5 h-5 text-emerald-500" /> 1. Kişisel Bilgileriniz
                 </h3>
-                {isOnlyPayment && <p className="text-xs font-bold text-emerald-600 mb-4 bg-emerald-50 p-2 rounded-lg">Ödemenizin hesabınıza işlenebilmesi için T.C. Kimlik numaranız ve iletişim bilgileriniz zorunludur.</p>}
+                {isOnlyPayment && <p className="text-xs font-bold text-emerald-600 mb-4 bg-emerald-50 p-2 rounded-lg">Ödemenizin hesabınıza işlenebilmesi için sistemde kayıtlı Telefon numaranız ve E-posta adresiniz üzerinden eşleştirme yapılacaktır.</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><User className="w-4 h-4 text-slate-400" /> İsim Soyisim <span className="text-red-500">*</span></label>
-                    <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="Kimlikteki adınız" />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
-                    <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
-                  </div>
-                  <div className={isOnlyPayment ? "opacity-50 pointer-events-none" : ""}>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) {!isOnlyPayment && <span className="text-red-500">*</span>}</label>
-                    <input type="date" required={!isOnlyPayment} disabled={isOnlyPayment} value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
-                  </div>
+                  {!isOnlyPayment && (
+                    <>
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><User className="w-4 h-4 text-slate-400" /> İsim Soyisim <span className="text-red-500">*</span></label>
+                        <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="Kimlikteki adınız" />
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
+                        <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
+                        <input type="date" required value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
                     <input type="tel" maxLength={11} required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="05XX XXX XX XX" />

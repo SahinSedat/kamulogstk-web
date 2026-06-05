@@ -47,19 +47,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     const body = await req.json();
     const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl, selectedPayments, isOnlyPayment } = body;
 
-    if (!name || !tcKimlik || !phone || !email || (!isOnlyPayment && !birthDate)) {
-      return NextResponse.json(
-        { error: "Ad Soyad, TC Kimlik, Telefon, Doğum Tarihi ve E-posta zorunludur." },
-        { status: 400 }
-      );
-    }
+    if (isOnlyPayment) {
+      if (!phone || !email) {
+        return NextResponse.json(
+          { error: "Ödeme bildirimi yapabilmek için Telefon ve E-posta bilgileriniz zorunludur." },
+          { status: 400 }
+        );
+      }
+    } else {
+      if (!name || !tcKimlik || !phone || !email || !birthDate) {
+        return NextResponse.json(
+          { error: "Ad Soyad, TC Kimlik, Telefon, Doğum Tarihi ve E-posta zorunludur." },
+          { status: 400 }
+        );
+      }
 
-    // TC Kimlik doğrulama (11 hane)
-    if (!/^\d{11}$/.test(tcKimlik)) {
-      return NextResponse.json(
-        { error: "T.C. Kimlik No 11 haneli olmalıdır." },
-        { status: 400 }
-      );
+      // TC Kimlik doğrulama (11 hane)
+      if (!/^\d{11}$/.test(tcKimlik)) {
+        return NextResponse.json(
+          { error: "T.C. Kimlik No 11 haneli olmalıdır." },
+          { status: 400 }
+        );
+      }
     }
 
     // STK var mı ve aktif mi kontrol et
@@ -72,20 +81,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       return NextResponse.json({ error: "STK bulunamadı." }, { status: 404 });
     }
 
-    // Aynı TC veya userId ile aynı STK'ya mevcut kayıt var mı?
-    const existing = await prisma.sTKApplication.findFirst({
-      where: {
-        stkId: stk.id,
-        OR: [
-          { tcKimlik },
-          ...(userId ? [{ userId }] : []),
-        ],
-      },
-    });
+    let existing = null;
+
+    if (isOnlyPayment) {
+      existing = await prisma.sTKApplication.findFirst({
+        where: {
+          stkId: stk.id,
+          OR: [
+            ...(phone ? [{ phone }] : []),
+            ...(email ? [{ email }] : []),
+            ...(userId ? [{ userId }] : []),
+          ],
+        },
+      });
+    } else {
+      existing = await prisma.sTKApplication.findFirst({
+        where: {
+          stkId: stk.id,
+          OR: [
+            { tcKimlik },
+            ...(userId ? [{ userId }] : []),
+          ],
+        },
+      });
+    }
 
     if (isOnlyPayment) {
       if (!existing) {
-        return NextResponse.json({ error: "Sistemde T.C. Kimlik numaranızla eşleşen bir üyelik kaydı bulunamadı. Lütfen 'Sadece Aidat Ödeyeceğim' seçeneğini kaldırarak tam başvuru yapınız." }, { status: 404 });
+        return NextResponse.json({ error: "Sistemde Telefon numaranızla veya E-posta adresinizle eşleşen bir üyelik kaydı bulunamadı. Lütfen 'Sadece Aidat Ödeyeceğim' seçeneğini kaldırarak tam başvuru yapınız." }, { status: 404 });
       }
 
       if (!receiptUrl || !selectedPayments || selectedPayments.length === 0) {
@@ -94,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
       let savedReceiptUrl = receiptUrl;
       if (receiptUrl.length > 500) {
-        savedReceiptUrl = await saveSignatureFile(receiptUrl, `dekont_${name}`);
+        savedReceiptUrl = await saveSignatureFile(receiptUrl, `dekont_${existing.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
       }
 
       for (const pType of selectedPayments) {
