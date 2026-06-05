@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, X, Building, Facebook, Instagram, Twitter, MessageCircle, Send, CheckCircle2, ChevronRight, HandCoins, ShieldCheck, Zap, Users, Megaphone, Handshake, Heart, Scale, GraduationCap, ArrowRight } from "lucide-react";
+import { Search, MapPin, X, Building, Facebook, Instagram, Twitter, Linkedin, MessageCircle, Send, CheckCircle2, ChevronRight, HandCoins, ShieldCheck, Zap, Users, Megaphone, Handshake, Heart, Scale, GraduationCap, ArrowRight } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export default function STKDirectoryPage() {
@@ -497,6 +497,77 @@ export default function STKDirectoryPage() {
         </Dialog.Portal>
       </Dialog.Root>
 
+      {/* Footer */}
+      <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8 mt-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            {/* 1. Kolon: Marka ve Özet */}
+            <div className="flex flex-col gap-4">
+              <Image src="/logo.png" alt="Kamulog Logo" width={120} height={32} className="object-contain" />
+              <p className="text-sm text-slate-500 leading-relaxed font-medium mt-2">
+                Sivil Toplum Dünyasını Tek Platformda Keşfedin. Dernek, sendika ve vakıflar için yenilikçi yönetim ve üyelik çözümleri.
+              </p>
+              <a href="mailto:destek@kamulogstk.net" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors mt-2 inline-flex items-center gap-2">
+                <Send className="w-4 h-4" /> destek@kamulogstk.net
+              </a>
+            </div>
+
+            {/* 2. Kolon: Hızlı Bağlantılar */}
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-6 tracking-wide">Platform</h4>
+              <ul className="space-y-4">
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Ana Sayfa</Link></li>
+                <li><Link href="/kurumsal" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kurumsal Çözümler</Link></li>
+                <li><Link href="#nasil-calisir" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Nasıl Çalışır?</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sıkça Sorulan Sorular (SSS)</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İletişim</Link></li>
+              </ul>
+            </div>
+
+            {/* 3. Kolon: Çözümler */}
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-6 tracking-wide">Çözümler</h4>
+              <ul className="space-y-4">
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Dernek Yönetimi</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sendika Yönetimi</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Vakıf Yönetimi</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Aidat Takibi</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Şeffaf İletişim</Link></li>
+              </ul>
+            </div>
+
+            {/* 4. Kolon: Yasal */}
+            <div>
+              <h4 className="font-semibold text-slate-900 mb-6 tracking-wide">Yasal</h4>
+              <ul className="space-y-4">
+                <li><Link href="/kvkk" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">KVKK Aydınlatma Metni</Link></li>
+                <li><Link href="/gizlilik-politikasi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Gizlilik Sözleşmesi</Link></li>
+                <li><Link href="/kullanici-sozlesmesi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kullanıcı ve Üyelik Sözleşmesi</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Çerez (Cookie) Politikası</Link></li>
+                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İptal ve İade Koşulları</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-slate-400 font-medium text-center md:text-left">
+              © 2026 Kamulog STK. Tüm hakları saklıdır.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm">
+                <Twitter className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm">
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm">
+                <Linkedin className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
