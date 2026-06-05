@@ -104,7 +104,7 @@ export default function STKApplicationPage() {
         errors.push("Ödeme bildirimi için Telefon Numaranızı ve E-posta adresinizi girmelisiniz.");
       }
     } else {
-      if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email || !formData.birthDate) {
+      if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email) {
         errors.push("Lütfen tüm zorunlu kimlik ve iletişim bilgilerinizi doldurun.");
       }
 
@@ -289,8 +289,8 @@ export default function STKApplicationPage() {
                         <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
                       </div>
                       <div>
-                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
-                        <input type="date" required value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-slate-400 font-normal text-xs">(İsteğe Bağlı)</span></label>
+                        <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
                       </div>
                     </>
                   )}

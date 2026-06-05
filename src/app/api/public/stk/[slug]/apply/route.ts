@@ -55,9 +55,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         );
       }
     } else {
-      if (!name || !tcKimlik || !phone || !email || !birthDate) {
+      if (!name || !tcKimlik || !phone || !email) {
         return NextResponse.json(
-          { error: "Ad Soyad, TC Kimlik, Telefon, Doğum Tarihi ve E-posta zorunludur." },
+          { error: "Ad Soyad, TC Kimlik, Telefon ve E-posta zorunludur." },
           { status: 400 }
         );
       }
