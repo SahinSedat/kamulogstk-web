@@ -583,7 +583,7 @@ export default function STKDirectoryPage() {
                 <li><Link href="/kurumsal" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kurumsal Çözümler</Link></li>
                 <li><Link href="#nasil-calisir" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Nasıl Çalışır?</Link></li>
                 <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sıkça Sorulan Sorular (SSS)</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İletişim</Link></li>
+                <li><Link href="/iletisim" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İletişim</Link></li>
               </ul>
             </div>
 
@@ -606,8 +606,8 @@ export default function STKDirectoryPage() {
                 <li><Link href="/kvkk" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">KVKK Aydınlatma Metni</Link></li>
                 <li><Link href="/gizlilik" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Gizlilik Sözleşmesi</Link></li>
                 <li><Link href="/kullanici-sozlesmesi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kullanıcı ve Üyelik Sözleşmesi</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Çerez (Cookie) Politikası</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İptal ve İade Koşulları</Link></li>
+                <li><Link href="/gizlilik" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Çerez (Cookie) Politikası</Link></li>
+                <li><Link href="/iptal-iade" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İptal ve İade Koşulları</Link></li>
               </ul>
             </div>
           </div>
