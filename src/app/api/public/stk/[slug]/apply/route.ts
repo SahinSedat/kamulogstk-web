@@ -45,9 +45,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   try {
     const { slug } = await params;
     const body = await req.json();
-    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl, selectedPayments } = body;
+    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl, selectedPayments, isOnlyPayment } = body;
 
-    if (!name || !tcKimlik || !phone || !email || !birthDate) {
+    if (!name || !tcKimlik || !phone || !email || (!isOnlyPayment && !birthDate)) {
       return NextResponse.json(
         { error: "Ad Soyad, TC Kimlik, Telefon, Doğum Tarihi ve E-posta zorunludur." },
         { status: 400 }
@@ -82,6 +82,47 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         ],
       },
     });
+
+    if (isOnlyPayment) {
+      if (!existing) {
+        return NextResponse.json({ error: "Sistemde T.C. Kimlik numaranızla eşleşen bir üyelik kaydı bulunamadı. Lütfen 'Sadece Aidat Ödeyeceğim' seçeneğini kaldırarak tam başvuru yapınız." }, { status: 404 });
+      }
+
+      if (!receiptUrl || !selectedPayments || selectedPayments.length === 0) {
+        return NextResponse.json({ error: "Ödeme bildirimi yapabilmek için dekont yüklemeli ve ödeme tipi seçmelisiniz." }, { status: 400 });
+      }
+
+      let savedReceiptUrl = receiptUrl;
+      if (receiptUrl.length > 500) {
+        savedReceiptUrl = await saveSignatureFile(receiptUrl, `dekont_${name}`);
+      }
+
+      for (const pType of selectedPayments) {
+        let amount = 0;
+        let paymentTypeEnum = "DONATION";
+        if (pType === "MONTHLY") { paymentTypeEnum = "MONTHLY_DUES"; amount = stk.monthlyDuesAmount || 0; }
+        else if (pType === "YEARLY") { paymentTypeEnum = "YEARLY_DUES"; amount = stk.annualDuesAmount || 0; }
+        
+        await prisma.sTKPaymentReport.create({
+          data: {
+            applicationId: existing.id,
+            amount,
+            paymentType: paymentTypeEnum,
+            paymentDate: new Date(),
+            receiptUrl: savedReceiptUrl,
+            status: "PENDING"
+          }
+        });
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Ödeme bildiriminiz ${stk.name} yönetimine başarıyla iletilmiştir.`,
+        },
+        { status: 200 }
+      );
+    }
 
     if (existing) {
       // Aktif veya bekleyen başvuru varsa mükerrer izin verme

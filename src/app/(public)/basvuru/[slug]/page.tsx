@@ -25,6 +25,10 @@ export default function STKApplicationPage() {
     birthDate: "",
   });
 
+  const [isOnlyPayment, setIsOnlyPayment] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [contractBase64, setContractBase64] = useState<string>("");
 
@@ -92,32 +96,45 @@ export default function STKApplicationPage() {
     e.preventDefault();
     setError("");
 
+    const errors: string[] = [];
+
     // Validation
-    if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email || !formData.birthDate) {
-      setError("Lütfen tüm zorunlu kimlik ve iletişim bilgilerinizi doldurun.");
+    if (!formData.name || !formData.tcKimlik || !formData.phone || !formData.email || (!isOnlyPayment && !formData.birthDate)) {
+      errors.push("Lütfen tüm zorunlu kimlik ve iletişim bilgilerinizi doldurun.");
+    }
+
+    if (formData.tcKimlik && formData.tcKimlik.length !== 11) {
+      errors.push("T.C. Kimlik No 11 haneli olmalıdır.");
+    }
+
+    if (formData.phone && formData.phone.length !== 11) {
+      errors.push("Cep telefonu numaranız 0 ile başlayacak şekilde 11 haneli olmalıdır.");
+    }
+
+    if (!isOnlyPayment) {
+      if (stk?.contractPdfUrl && !contractBase64) {
+        errors.push("Lütfen ıslak imzalı üyelik sözleşmesini yükleyiniz.");
+      }
+
+      if (!consentMembership || !consentKVKK || !consentPrivacy) {
+        errors.push("Başvurunuzu tamamlamak için lütfen onay kutularını işaretleyiniz.");
+      }
+    } else {
+      if (selectedPayments.length === 0) {
+        errors.push("Sadece aidat ödemesi yapıyorsanız en az bir ödeme tipi (Aylık, Yıllık, Bağış) seçmelisiniz.");
+      }
+      if (!receiptBase64) {
+        errors.push("Sadece aidat ödemesi yapıyorsanız ödeme dekontunuzu yüklemelisiniz.");
+      }
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setShowErrorDialog(true);
       return;
     }
 
-    if (formData.tcKimlik.length !== 11) {
-      setError("T.C. Kimlik No 11 haneli olmalıdır.");
-      return;
-    }
-
-    if (formData.phone.length !== 11) {
-      setError("Cep telefonu numaranız 0 ile başlayacak şekilde 11 haneli olmalıdır.");
-      return;
-    }
-
-    if (stk?.contractPdfUrl && !contractBase64) {
-      setError("Lütfen ıslak imzalı üyelik sözleşmesini yükleyiniz.");
-      return;
-    }
-
-    if (!consentMembership || !consentKVKK || !consentPrivacy) {
-      setError("Başvurunuzu tamamlamak için lütfen onay kutularını işaretleyiniz.");
-      return;
-    }
-
+    setValidationErrors([]);
     setSubmitting(true);
 
     try {
@@ -129,7 +146,8 @@ export default function STKApplicationPage() {
           contractUrl: contractBase64,
           receiptUrl: receiptBase64,
           selectedPayments,
-          consentGiven: true,
+          consentGiven: !isOnlyPayment,
+          isOnlyPayment,
         }),
       });
 
@@ -189,7 +207,30 @@ export default function STKApplicationPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto relative">
+        {/* Hata Dialog Modalı */}
+        {showErrorDialog && (
+          <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-red-100 transform transition-all scale-100">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <ShieldCheck className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 text-center mb-4">Eksik Bilgiler Var!</h3>
+              <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-semibold mb-6 space-y-2">
+                {validationErrors.map((err, i) => (
+                  <p key={i} className="flex items-start gap-2"><span className="text-red-500 mt-0.5">•</span> {err}</p>
+                ))}
+              </div>
+              <button 
+                onClick={() => setShowErrorDialog(false)}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-red-500/30"
+              >
+                Anladım, Düzeltiyorum
+              </button>
+            </div>
+          </div>
+        )}
+
         <button onClick={() => router.push("/")} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-semibold mb-8 transition-colors">
           <ArrowLeft className="w-5 h-5" /> Geri Dön
         </button>
@@ -210,11 +251,26 @@ export default function STKApplicationPage() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               
+              {/* Sadece Aidat Ödeyeceğim Toggle */}
+              <div className="bg-slate-50 border-2 border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <HandCoins className="w-5 h-5 text-emerald-500" /> Sadece Aidat / Bağış Ödeyeceğim
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">Zaten kayıtlı bir üyeyseniz ve yalnızca ödeme dekontu iletmek istiyorsanız bu seçeneği işaretleyin.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" checked={isOnlyPayment} onChange={(e) => setIsOnlyPayment(e.target.checked)} className="sr-only peer" />
+                  <div className="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                </label>
+              </div>
+
               {/* Kişisel Bilgiler */}
-              <div>
+              <div className={`transition-all ${isOnlyPayment ? 'opacity-80' : ''}`}>
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <User className="w-5 h-5 text-emerald-500" /> 1. Kişisel Bilgileriniz
                 </h3>
+                {isOnlyPayment && <p className="text-xs font-bold text-emerald-600 mb-4 bg-emerald-50 p-2 rounded-lg">Ödemenizin hesabınıza işlenebilmesi için T.C. Kimlik numaranız ve iletişim bilgileriniz zorunludur.</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><User className="w-4 h-4 text-slate-400" /> İsim Soyisim <span className="text-red-500">*</span></label>
@@ -224,9 +280,9 @@ export default function STKApplicationPage() {
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
                     <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
                   </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
-                    <input type="date" required value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
+                  <div className={isOnlyPayment ? "opacity-50 pointer-events-none" : ""}>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) {!isOnlyPayment && <span className="text-red-500">*</span>}</label>
+                    <input type="date" required={!isOnlyPayment} disabled={isOnlyPayment} value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
                   </div>
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
@@ -242,39 +298,44 @@ export default function STKApplicationPage() {
               <div className="h-px bg-slate-200 w-full" />
 
               {/* Üyelik Sözleşmesi (Zorunlu) */}
-              <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-emerald-500" /> 2. Üyelik Sözleşmesi
-                </h3>
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
-                  <p className="text-sm text-amber-800 font-medium mb-4 leading-relaxed">
-                    Başvurunuzun işleme alınabilmesi için kuruluşun belirlediği Üyelik Sözleşmesini bilgisayarınıza indirip, <strong className="text-amber-900 font-bold">ıslak imzalı</strong> bir şekilde taratarak (PDF/JPG) sisteme geri yüklemeniz <strong className="text-amber-900 font-bold">zorunludur</strong>.
-                  </p>
-                  {stk?.contractPdfUrl ? (
-                    <a href={stk.contractPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-amber-300 text-amber-700 hover:bg-amber-100 rounded-xl font-bold text-sm transition-colors shadow-sm">
-                      <FileText className="w-4 h-4" /> Sözleşme Şablonunu İndir
-                    </a>
-                  ) : (
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md">Bu kuruluş için henüz sözleşme şablonu yüklenmemiş. Lütfen boş bir beyan yükleyiniz.</span>
-                  )}
-                </div>
+              {!isOnlyPayment && (
+                <>
+                  <div className="h-px bg-slate-200 w-full" />
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-emerald-500" /> 2. Üyelik Sözleşmesi
+                    </h3>
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+                      <p className="text-sm text-amber-800 font-medium mb-4 leading-relaxed">
+                        Başvurunuzun işleme alınabilmesi için kuruluşun belirlediği Üyelik Sözleşmesini bilgisayarınıza indirip, <strong className="text-amber-900 font-bold">ıslak imzalı</strong> bir şekilde taratarak (PDF/JPG) sisteme geri yüklemeniz <strong className="text-amber-900 font-bold">zorunludur</strong>.
+                      </p>
+                      {stk?.contractPdfUrl ? (
+                        <a href={stk.contractPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-amber-300 text-amber-700 hover:bg-amber-100 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                          <FileText className="w-4 h-4" /> Sözleşme Şablonunu İndir
+                        </a>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md">Bu kuruluş için henüz sözleşme şablonu yüklenmemiş. Lütfen boş bir beyan yükleyiniz.</span>
+                      )}
+                    </div>
 
-                <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-emerald-500 hover:bg-emerald-50 transition-colors bg-slate-50">
-                  <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileChange(e, "contract")} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                  <UploadCloud className={`w-10 h-10 mx-auto mb-3 ${contractFile ? 'text-emerald-500' : 'text-slate-400'}`} />
-                  {contractFile ? (
-                    <div>
-                      <p className="text-sm font-bold text-emerald-700">{contractFile.name}</p>
-                      <p className="text-xs text-emerald-600 mt-1">Sözleşme Başarıyla Yüklendi ✅</p>
+                    <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-emerald-500 hover:bg-emerald-50 transition-colors bg-slate-50">
+                      <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileChange(e, "contract")} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                      <UploadCloud className={`w-10 h-10 mx-auto mb-3 ${contractFile ? 'text-emerald-500' : 'text-slate-400'}`} />
+                      {contractFile ? (
+                        <div>
+                          <p className="text-sm font-bold text-emerald-700">{contractFile.name}</p>
+                          <p className="text-xs text-emerald-600 mt-1">Sözleşme Başarıyla Yüklendi ✅</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">İmzalı Sözleşmeyi Yüklemek İçin Tıklayın <span className="text-red-500">*</span></p>
+                          <p className="text-xs font-medium text-slate-500 mt-1">PDF, JPG, PNG (Maks 10MB)</p>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">İmzalı Sözleşmeyi Yüklemek İçin Tıklayın <span className="text-red-500">*</span></p>
-                      <p className="text-xs font-medium text-slate-500 mt-1">PDF, JPG, PNG (Maks 10MB)</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
 
               <div className="h-px bg-slate-200 w-full" />
 
@@ -336,7 +397,8 @@ export default function STKApplicationPage() {
               <div className="h-px bg-slate-200 w-full" />
 
               {/* Onay Kutuları */}
-              <div className="space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6">
+              {!isOnlyPayment && (
+                <div className="space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <div className="relative flex items-center justify-center mt-0.5">
                     <input type="checkbox" checked={consentMembership} onChange={(e) => setConsentMembership(e.target.checked)} className="peer sr-only" />
@@ -373,18 +435,23 @@ export default function STKApplicationPage() {
                   </span>
                 </label>
               </div>
+              )}
 
               {/* Submit */}
               <div className="pt-4">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white rounded-xl font-black text-lg transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
+                  className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-2 ${
+                    validationErrors.length > 0 && !showErrorDialog 
+                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse border-2 border-red-400' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30'
+                  } disabled:bg-slate-400 disabled:shadow-none disabled:animate-none`}
                 >
                   {submitting ? (
                     <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> Gönderiliyor...</>
                   ) : (
-                    <><CheckCircle2 className="w-6 h-6" /> BAŞVURUYU TAMAMLA</>
+                    <><CheckCircle2 className="w-6 h-6" /> {isOnlyPayment ? 'ÖDEME BİLDİRİMİNİ GÖNDER' : 'BAŞVURUYU TAMAMLA'}</>
                   )}
                 </button>
                 <p className="text-center text-xs font-medium text-slate-500 mt-4 flex items-center justify-center gap-1.5">
