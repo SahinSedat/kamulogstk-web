@@ -540,17 +540,15 @@ export default function STKDirectoryPage() {
             <div className="relative h-[400px] sm:h-[550px] w-full mt-12 lg:mt-0">
               <div className="absolute right-[5%] sm:right-[15%] lg:right-0 inset-y-0 w-full max-w-[500px]">
                 {/* Arka plan cihaz / 1. Ekran (Menü) */}
-                <div className="absolute right-[35%] sm:right-[40%] top-10 sm:top-16 w-[180px] sm:w-[240px] h-[380px] sm:h-[500px] transform -rotate-6 z-10 transition-transform hover:-rotate-2 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-emerald-900 shadow-2xl bg-emerald-950 overflow-hidden flex items-center justify-center">
+                <div className="absolute right-[35%] sm:right-[40%] top-10 sm:top-16 w-[180px] sm:w-[240px] h-[380px] sm:h-[500px] transform -rotate-6 z-10 transition-transform hover:-rotate-2 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-emerald-900 shadow-2xl bg-emerald-950 overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-5 sm:h-6 bg-emerald-900 w-1/2 mx-auto rounded-b-xl z-20"></div>
-                  <img src="/images/app1.png" alt="" className="w-full h-full object-cover object-top opacity-90 hover:opacity-100 transition-opacity relative z-10" />
-                  <span className="absolute text-emerald-800 text-xs font-bold text-center px-4">Görsel Yükleniyor...</span>
+                  <img src="/images/app1.png" alt="Kamulog App Menu" className="w-full h-full object-cover object-top hover:opacity-100 transition-opacity relative z-10" />
                 </div>
                 
                 {/* Ön plan cihaz / 2. Ekran (Detay) */}
-                <div className="absolute right-0 sm:right-[10%] top-0 w-[200px] sm:w-[260px] h-[420px] sm:h-[550px] transform rotate-3 z-20 transition-transform hover:rotate-1 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-emerald-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-emerald-950 overflow-hidden flex items-center justify-center">
+                <div className="absolute right-0 sm:right-[10%] top-0 w-[200px] sm:w-[260px] h-[420px] sm:h-[550px] transform rotate-3 z-20 transition-transform hover:rotate-1 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-emerald-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-emerald-950 overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-5 sm:h-7 bg-emerald-900 w-1/2 mx-auto rounded-b-xl z-20"></div>
-                  <img src="/images/app2.png" alt="" className="w-full h-full object-cover object-top relative z-10" />
-                  <span className="absolute text-emerald-800 text-xs font-bold text-center px-4">Görsel Yükleniyor...</span>
+                  <img src="/images/app2.png" alt="Kamulog App Detail" className="w-full h-full object-cover object-top relative z-10" />
                 </div>
               </div>
             </div>
