@@ -48,9 +48,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl, selectedPayments, isOnlyPayment } = body;
 
     if (isOnlyPayment) {
-      if (!phone || !email) {
+      if (!tcKimlik) {
         return NextResponse.json(
-          { error: "Ödeme bildirimi yapabilmek için Telefon ve E-posta bilgileriniz zorunludur." },
+          { error: "Lütfen TC Kimlik numaranızı giriniz." },
           { status: 400 }
         );
       }
@@ -74,24 +74,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     // STK var mı ve aktif mi kontrol et
     const stk = await prisma.sTKOrganization.findUnique({
       where: { slug },
-      select: { id: true, status: true, name: true },
+      select: { id: true, status: true, name: true, monthlyDuesAmount: true, annualDuesAmount: true },
     });
 
     if (!stk || stk.status !== "ACTIVE") {
       return NextResponse.json({ error: "STK bulunamadı." }, { status: 404 });
     }
 
-    let existing = null;
-
+    let existing;
     if (isOnlyPayment) {
       existing = await prisma.sTKApplication.findFirst({
         where: {
           stkId: stk.id,
-          OR: [
-            ...(phone ? [{ phone }] : []),
-            ...(email ? [{ email }] : []),
-            ...(userId ? [{ userId }] : []),
-          ],
+          tcKimlik
         },
       });
     } else {
@@ -144,8 +139,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       // Bildirim gönder
       sendSTKPaymentReceivedNotification({
         applicantName: existing.name,
-        applicantEmail: existing.email || email,
-        applicantPhone: existing.phone || phone,
+        applicantEmail: existing.email || "",
+        applicantPhone: existing.phone || "",
         stkName: stk.name,
         stkId: stk.id,
         userId: existing.userId || undefined,

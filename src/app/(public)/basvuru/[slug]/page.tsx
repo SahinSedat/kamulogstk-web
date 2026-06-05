@@ -29,6 +29,9 @@ export default function STKApplicationPage() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [membershipNotFound, setMembershipNotFound] = useState(false);
+  
+  const [duesStatus, setDuesStatus] = useState<{message: string; dueDate: string | null; name: string} | null>(null);
+  const [checkingDues, setCheckingDues] = useState(false);
 
   const [receiptNumber, setReceiptNumber] = useState("");
   const [contractFile, setContractFile] = useState<File | null>(null);
@@ -277,6 +280,27 @@ export default function STKApplicationPage() {
           </div>
         )}
 
+        {/* Aidat Sorgu Sonucu Dialog Modalı */}
+        {duesStatus && (
+          <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-emerald-100 transform transition-all scale-100 text-center">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Sayın {duesStatus.name}</h3>
+              <p className="text-slate-600 mb-6 font-medium text-sm leading-relaxed">
+                {duesStatus.message}
+              </p>
+              <button 
+                onClick={() => setDuesStatus(null)}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        )}
+
         <button onClick={() => router.push("/")} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-semibold mb-8 transition-colors">
           <ArrowLeft className="w-5 h-5" /> Geri Dön
         </button>
@@ -318,6 +342,15 @@ export default function STKApplicationPage() {
                 </h3>
                 {isOnlyPayment && <p className="text-xs font-bold text-emerald-600 mb-4 bg-emerald-50 p-2 rounded-lg">Ödemenizin hesabınıza işlenebilmesi için sistemde kayıtlı Telefon numaranız ve E-posta adresiniz üzerinden eşleştirme yapılacaktır.</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
+                    <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
+                    {isOnlyPayment && (
+                      <button type="button" onClick={handleCheckDues} disabled={checkingDues} className="mt-2 text-sm text-emerald-600 font-bold hover:underline">
+                        {checkingDues ? "Sorgulanıyor..." : "Aidat Durumumu Sorgula"}
+                      </button>
+                    )}
+                  </div>
                   {!isOnlyPayment && (
                     <>
                       <div>
@@ -325,23 +358,19 @@ export default function STKApplicationPage() {
                         <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="Kimlikteki adınız" />
                       </div>
                       <div>
-                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
-                        <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
-                      </div>
-                      <div>
                         <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-slate-400 font-normal text-xs">(İsteğe Bağlı)</span></label>
                         <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" />
                       </div>
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
+                        <input type="tel" maxLength={11} required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="05XX XXX XX XX" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Mail className="w-4 h-4 text-slate-400" /> E-posta Adresi <span className="text-red-500">*</span></label>
+                        <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="ornek@posta.com" />
+                      </div>
                     </>
                   )}
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
-                    <input type="tel" maxLength={11} required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="05XX XXX XX XX" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Mail className="w-4 h-4 text-slate-400" /> E-posta Adresi <span className="text-red-500">*</span></label>
-                    <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="ornek@posta.com" />
-                  </div>
                 </div>
               </div>
 
