@@ -38,11 +38,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   try {
     const { slug } = await params;
     const body = await req.json();
-    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl } = body;
+    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl } = body;
 
-    if (!name || !tcKimlik || !phone || !email) {
+    if (!name || !tcKimlik || !phone || !email || !birthDate) {
       return NextResponse.json(
-        { error: "Ad Soyad, TC Kimlik, Telefon ve E-posta zorunludur." },
+        { error: "Ad Soyad, TC Kimlik, Telefon, Doğum Tarihi ve E-posta zorunludur." },
         { status: 400 }
       );
     }
@@ -86,16 +86,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       }
 
       // RESIGNED veya REJECTED ise mevcut kaydı güncelle (yeni kayıt oluşturma)
-      // İmza base64 ise dosya olarak kaydet
       let savedSignatureUrl = signatureUrl || null;
       if (signatureUrl && signatureUrl.length > 500) {
         savedSignatureUrl = await saveSignatureFile(signatureUrl, name);
       }
 
-      // Yüklenen belge base64 ise dosya olarak kaydet
       let savedDocumentUrl = documentUrl || null;
       if (documentUrl && documentUrl.length > 500) {
         savedDocumentUrl = await saveSignatureFile(documentUrl, `belge_${name}`);
+      }
+
+      let savedContractUrl = contractUrl || null;
+      if (contractUrl && contractUrl.length > 500) {
+        savedContractUrl = await saveSignatureFile(contractUrl, `sozlesme_${name}`);
+      }
+
+      let savedReceiptUrl = receiptUrl || null;
+      if (receiptUrl && receiptUrl.length > 500) {
+        savedReceiptUrl = await saveSignatureFile(receiptUrl, `dekont_${name}`);
       }
 
       const application = await prisma.sTKApplication.update({
@@ -111,8 +119,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
           signatureType: signatureType || null,
           signatureUrl: savedSignatureUrl,
           documentUrl: savedDocumentUrl,
+          birthDate: birthDate ? new Date(birthDate) : undefined,
+          contractUrl: savedContractUrl,
+          receiptUrl: savedReceiptUrl,
         },
       });
+
+      if (savedReceiptUrl) {
+        await prisma.sTKPaymentReport.create({
+          data: {
+            applicationId: application.id,
+            amount: 0,
+            paymentType: "INITIAL_DUES",
+            paymentDate: new Date(),
+            receiptUrl: savedReceiptUrl,
+            status: "PENDING"
+          }
+        });
+      }
 
       // Başvuru bildirimi gönder
       sendSTKApplicationNotification({
@@ -134,16 +158,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       );
     }
 
-    // İmza base64 ise dosya olarak kaydet
     let savedSignatureUrl2 = signatureUrl || null;
     if (signatureUrl && signatureUrl.length > 500) {
       savedSignatureUrl2 = await saveSignatureFile(signatureUrl, name);
     }
 
-    // Yüklenen belge base64 ise dosya olarak kaydet
     let savedDocumentUrl2 = documentUrl || null;
     if (documentUrl && documentUrl.length > 500) {
       savedDocumentUrl2 = await saveSignatureFile(documentUrl, `belge_${name}`);
+    }
+
+    let savedContractUrl2 = contractUrl || null;
+    if (contractUrl && contractUrl.length > 500) {
+      savedContractUrl2 = await saveSignatureFile(contractUrl, `sozlesme_${name}`);
+    }
+
+    let savedReceiptUrl2 = receiptUrl || null;
+    if (receiptUrl && receiptUrl.length > 500) {
+      savedReceiptUrl2 = await saveSignatureFile(receiptUrl, `dekont_${name}`);
     }
 
     const application = await prisma.sTKApplication.create({
@@ -159,8 +191,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         signatureType: signatureType || null,
         signatureUrl: savedSignatureUrl2,
         documentUrl: savedDocumentUrl2,
+        birthDate: birthDate ? new Date(birthDate) : undefined,
+        contractUrl: savedContractUrl2,
+        receiptUrl: savedReceiptUrl2,
       },
     });
+
+    if (savedReceiptUrl2) {
+      await prisma.sTKPaymentReport.create({
+        data: {
+          applicationId: application.id,
+          amount: 0,
+          paymentType: "INITIAL_DUES",
+          paymentDate: new Date(),
+          receiptUrl: savedReceiptUrl2,
+          status: "PENDING"
+        }
+      });
+    }
 
     // Başvuru bildirimi gönder (e-posta + WhatsApp) - arka planda
     sendSTKApplicationNotification({

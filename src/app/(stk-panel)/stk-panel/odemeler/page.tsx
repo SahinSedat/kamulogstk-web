@@ -292,10 +292,14 @@ export default function OdemelerPage() {
                 <h3 className="text-xs font-bold text-amber-600 uppercase mb-2">🧾 Dekont</h3>
                 {detailPay.receiptUrl ? (
                   <>
-                    <div className="border-2 border-amber-200 rounded-xl overflow-hidden bg-white p-2 max-h-72 overflow-y-auto">
-                      <img src={detailPay.receiptUrl.startsWith("/") || detailPay.receiptUrl.startsWith("http") ? detailPay.receiptUrl : `data:image/png;base64,${detailPay.receiptUrl}`} alt="Dekont" className="max-h-72 mx-auto object-contain" />
+                    <div className="border-2 border-amber-200 rounded-xl overflow-hidden bg-white p-2 max-h-[300px] overflow-y-auto">
+                      {detailPay.receiptUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || detailPay.receiptUrl.startsWith("data:image/") ? (
+                        <img src={detailPay.receiptUrl.startsWith("/") || detailPay.receiptUrl.startsWith("http") ? detailPay.receiptUrl : `data:image/png;base64,${detailPay.receiptUrl}`} alt="Dekont" className="max-h-72 mx-auto object-contain" />
+                      ) : (
+                        <iframe src={detailPay.receiptUrl} className="w-full h-[280px] rounded-lg border-0" />
+                      )}
                     </div>
-                    <a href={detailPay.receiptUrl.startsWith("/") || detailPay.receiptUrl.startsWith("http") ? detailPay.receiptUrl : `data:image/png;base64,${detailPay.receiptUrl}`} download={`dekont-${detailPay.id}.png`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">📥 Dekontu İndir</a>
+                    <a href={detailPay.receiptUrl.startsWith("/") || detailPay.receiptUrl.startsWith("http") ? detailPay.receiptUrl : `data:image/png;base64,${detailPay.receiptUrl}`} download={`dekont-${detailPay.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">📥 Dekontu İndir</a>
                   </>
                 ) : (
                   <div className="flex flex-col items-center py-6 text-gray-400">

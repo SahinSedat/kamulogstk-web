@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, X, Building, Facebook, Instagram, Twitter, Linkedin, MessageCircle, Send, CheckCircle2, ChevronRight, HandCoins, ShieldCheck, Zap, Users, Megaphone, Handshake, Heart, Scale, GraduationCap, ArrowRight } from "lucide-react";
+import { Search, MapPin, X, Building, Facebook, Instagram, Twitter, Linkedin, MessageCircle, Send, CheckCircle2, ChevronRight, HandCoins, ShieldCheck, Zap, Users, Megaphone, Handshake, Heart, Scale, GraduationCap, ArrowRight, Copy } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export default function STKDirectoryPage() {
@@ -12,6 +12,7 @@ export default function STKDirectoryPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedStk, setSelectedStk] = useState<any>(null);
+  const [copiedIban, setCopiedIban] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -51,7 +52,6 @@ export default function STKDirectoryPage() {
               <span className="text-2xl font-black tracking-tighter text-slate-900 flex items-center">
                 KamuLog<span className="text-emerald-600">STK</span>
               </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mt-3 group-hover:scale-150 transition-transform"></span>
             </Link>
           </div>
           <div className="flex items-center gap-6">
@@ -477,9 +477,21 @@ export default function STKDirectoryPage() {
                     </h4>
                     <p className="text-[15px] font-bold text-slate-800 mb-3">{selectedStk.name}</p>
                     <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm mb-4">
-                      <span className="font-mono text-[15px] text-slate-700 font-semibold tracking-wider">TR-- ---- ---- ---- ---- ---- --</span>
-                      <button className="text-slate-400 hover:text-slate-800 flex items-center gap-1.5 text-xs font-bold transition-colors">
-                        📋 KOPYALA
+                      <span className="font-mono text-[15px] text-slate-700 font-semibold tracking-wider">
+                        {selectedStk.iban || "TR-- ---- ---- ---- ---- ---- --"}
+                      </span>
+                      <button 
+                        onClick={() => {
+                          if (selectedStk.iban) {
+                            navigator.clipboard.writeText(selectedStk.iban);
+                            setCopiedIban(true);
+                            setTimeout(() => setCopiedIban(false), 2000);
+                          }
+                        }}
+                        className={`${copiedIban ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-800'} flex items-center gap-1.5 text-xs font-bold transition-colors`}
+                      >
+                        {copiedIban ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copiedIban ? "KOPYALANDI" : "KOPYALA"}
                       </button>
                     </div>
                     <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm font-extrabold border border-amber-100/50 shadow-sm">
@@ -512,7 +524,6 @@ export default function STKDirectoryPage() {
                 <span className="text-2xl font-black tracking-tighter text-slate-900 flex items-center">
                   KamuLog<span className="text-emerald-600">STK</span>
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-3 group-hover:scale-150 transition-transform"></span>
               </Link>
               <p className="text-sm text-slate-500 leading-relaxed font-medium mt-2">
                 Sivil Toplum Dünyasını Tek Platformda Keşfedin. Dernek, sendika ve vakıflar için yenilikçi yönetim ve üyelik çözümleri.
