@@ -47,7 +47,12 @@ export default function STKDirectoryPage() {
       <nav className="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-40 transition-all">
         <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Kamulog Logo" width={150} height={40} className="object-contain" />
+            <Link href="/" className="flex items-center gap-1.5 group">
+              <span className="text-2xl font-black tracking-tighter text-slate-900 flex items-center">
+                KamuLog<span className="text-emerald-600">STK</span>
+              </span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 mt-3 group-hover:scale-150 transition-transform"></span>
+            </Link>
           </div>
           <div className="flex items-center gap-6">
             <a href="#nasil-calisir" className="text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors hidden md:block">
@@ -91,8 +96,8 @@ export default function STKDirectoryPage() {
             onSubmit={(e) => {
               e.preventDefault();
               if (search.trim()) {
-                console.log("Aranan kelime:", search);
-                router.push(`/arama?q=${encodeURIComponent(search.trim())}`);
+                const el = document.getElementById("directory-section");
+                el?.scrollIntoView({ behavior: "smooth" });
               }
             }}
           >
@@ -111,7 +116,7 @@ export default function STKDirectoryPage() {
       </div>
 
       {/* Main Content - Directory */}
-      <main className="max-w-4xl mx-auto px-4 pb-24 pt-16">
+      <main id="directory-section" className="max-w-4xl mx-auto px-4 pb-24 pt-16 scroll-mt-20">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
           <div>
@@ -503,7 +508,12 @@ export default function STKDirectoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             {/* 1. Kolon: Marka ve Özet */}
             <div className="flex flex-col gap-4">
-              <Image src="/logo.png" alt="Kamulog Logo" width={120} height={32} className="object-contain" />
+              <Link href="/" className="flex items-center gap-1.5 group mb-2">
+                <span className="text-2xl font-black tracking-tighter text-slate-900 flex items-center">
+                  KamuLog<span className="text-emerald-600">STK</span>
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-3 group-hover:scale-150 transition-transform"></span>
+              </Link>
               <p className="text-sm text-slate-500 leading-relaxed font-medium mt-2">
                 Sivil Toplum Dünyasını Tek Platformda Keşfedin. Dernek, sendika ve vakıflar için yenilikçi yönetim ve üyelik çözümleri.
               </p>
