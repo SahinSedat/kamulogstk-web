@@ -46,7 +46,7 @@ export async function GET(
 
     // Aidat hesabı
     const lastPayment = application.payments[0];
-    let message = "Henüz onaylanmış bir aidat ödemeniz bulunmamaktadır.";
+    let message = "Sistemde Aktif Üye olarak görünüyorsunuz. Ancak henüz onaylanmış bir aidat ödemeniz bulunmamaktadır.";
     let dueDate = null;
 
     if (lastPayment) {
@@ -63,11 +63,11 @@ export async function GET(
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays > 0) {
-          message = `Son ödemeniz onaylanmıştır. Bir sonraki aidat ödemenize ${diffDays} gün kaldı. (${dueDate.toLocaleDateString('tr-TR')})`;
+          message = `Sistemde Aktif Üye olarak görünüyorsunuz. Son ödemeniz başarıyla işlenmiştir. Bir sonraki aidat ödemenize ${diffDays} gün kaldı. (${dueDate.toLocaleDateString('tr-TR')})`;
         } else if (diffDays === 0) {
-          message = `Aidat ödeme gününüz bugün! (${dueDate.toLocaleDateString('tr-TR')})`;
+          message = `Sistemde Aktif Üye olarak görünüyorsunuz. Aidat ödeme gününüz bugün! (${dueDate.toLocaleDateString('tr-TR')})`;
         } else {
-          message = `Aidat ödemeniz ${Math.abs(diffDays)} gün gecikmiştir. Lütfen ödemenizi yapınız. (${dueDate.toLocaleDateString('tr-TR')})`;
+          message = `Sistemde Aktif Üye olarak görünüyorsunuz. Aidat ödemeniz ${Math.abs(diffDays)} gün gecikmiştir. Lütfen aidat ödemenizi yapınız. (${dueDate.toLocaleDateString('tr-TR')})`;
         }
       }
     }

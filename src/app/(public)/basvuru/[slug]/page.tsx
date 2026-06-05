@@ -373,8 +373,9 @@ export default function STKApplicationPage() {
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
                     <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
                     {isOnlyPayment && (
-                      <button type="button" onClick={handleCheckDues} disabled={checkingDues} className="mt-2 text-sm text-emerald-600 font-bold hover:underline">
-                        {checkingDues ? "Sorgulanıyor..." : "Aidat Durumumu Sorgula"}
+                      <button type="button" onClick={handleCheckDues} disabled={checkingDues} className="mt-3 w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-5 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all border border-emerald-200 shadow-sm uppercase tracking-wide">
+                        <ShieldCheck className="w-5 h-5" />
+                        {checkingDues ? "Sorgulanıyor..." : "Üyelik ve Aidat Durumu Sorgula"}
                       </button>
                     )}
                   </div>
