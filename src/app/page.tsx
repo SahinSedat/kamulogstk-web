@@ -96,13 +96,13 @@ export default function STKDirectoryPage() {
               }
             }}
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
             <input
               type="text"
               placeholder="Dernek, sendika veya vakıf arayın..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-16 pl-12 pr-28 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
+              className="w-full h-16 pl-16 pr-28 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
             />
             <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] transition-colors shadow-sm">
               Ara
