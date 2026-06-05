@@ -470,35 +470,6 @@ export default function STKDirectoryPage() {
                     </div>
                   </div>
 
-                  {/* Banka Bilgileri */}
-                  <div className="mb-8 p-6 rounded-3xl bg-slate-50 border border-slate-100">
-                    <h4 className="flex items-center gap-2 text-[13px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-                      Finansal Bilgiler
-                    </h4>
-                    <p className="text-[15px] font-bold text-slate-800 mb-3">{selectedStk.name}</p>
-                    <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm mb-4">
-                      <span className="font-mono text-[15px] text-slate-700 font-semibold tracking-wider">
-                        {selectedStk.iban || "TR-- ---- ---- ---- ---- ---- --"}
-                      </span>
-                      <button 
-                        onClick={() => {
-                          if (selectedStk.iban) {
-                            navigator.clipboard.writeText(selectedStk.iban);
-                            setCopiedIban(true);
-                            setTimeout(() => setCopiedIban(false), 2000);
-                          }
-                        }}
-                        className={`${copiedIban ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-800'} flex items-center gap-1.5 text-xs font-bold transition-colors`}
-                      >
-                        {copiedIban ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        {copiedIban ? "KOPYALANDI" : "KOPYALA"}
-                      </button>
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm font-extrabold border border-amber-100/50 shadow-sm">
-                      <HandCoins className="w-5 h-5 text-amber-500" /> 
-                      {selectedStk.annualDuesAmount ? `Yıllık Aidat: ₺${selectedStk.annualDuesAmount}` : "Aidat Ücretsiz"}
-                    </div>
-                  </div>
 
                   {/* CTA */}
                   <Link 
