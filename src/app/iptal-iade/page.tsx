@@ -58,7 +58,7 @@ export default function IptalIadePage() {
               Sistemin teknik işleyişi veya aracı hizmetlerimizle ilgili tüm sorularınız için bizimle iletişime geçebilirsiniz. Ancak finansal iadeler konusunda lütfen doğrudan üyesi olduğunuz kuruma başvurunuz.
             </p>
             <ul className="list-none space-y-1 text-slate-700 mt-4">
-              <li><strong>E-Posta:</strong> <a href="mailto:destek@kamulogstk.net" className="text-emerald-600 hover:underline font-semibold">destek@kamulogstk.net</a></li>
+              <li><strong>E-Posta:</strong> <a href="mailto:iletisim@kamulogstk.net" className="text-emerald-600 hover:underline font-semibold">iletisim@kamulogstk.net</a></li>
               <li><strong>İletişim Formu:</strong> <Link href="/iletisim" className="text-emerald-600 hover:underline font-semibold">Buraya tıklayarak</Link> bize ulaşabilirsiniz.</li>
             </ul>
           </div>

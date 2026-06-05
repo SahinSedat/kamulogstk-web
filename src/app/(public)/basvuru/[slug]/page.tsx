@@ -30,8 +30,17 @@ export default function STKApplicationPage() {
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptBase64, setReceiptBase64] = useState<string>("");
+  const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
 
   const [copiedIban, setCopiedIban] = useState(false);
+
+  const togglePayment = (type: string) => {
+    if (selectedPayments.includes(type)) {
+      setSelectedPayments(selectedPayments.filter(p => p !== type));
+    } else {
+      setSelectedPayments([...selectedPayments, type]);
+    }
+  };
 
   const [consentMembership, setConsentMembership] = useState(false);
   const [consentKVKK, setConsentKVKK] = useState(false);
@@ -119,6 +128,7 @@ export default function STKApplicationPage() {
           ...formData,
           contractUrl: contractBase64,
           receiptUrl: receiptBase64,
+          selectedPayments,
           consentGiven: true,
         }),
       });
@@ -277,17 +287,21 @@ export default function STKApplicationPage() {
                 {(stk?.annualDuesAmount || stk?.monthlyDuesAmount || stk?.iban) && (
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {stk?.annualDuesAmount && (
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><HandCoins className="w-5 h-5" /></div>
-                        <div><p className="text-xs font-bold text-slate-500 uppercase">Yıllık Aidat</p><p className="text-sm font-black text-slate-800">₺{stk.annualDuesAmount}</p></div>
-                      </div>
+                      <button type="button" onClick={() => togglePayment('YEARLY')} className={`text-left p-3 rounded-xl border shadow-sm flex items-center gap-3 transition-all ${selectedPayments.includes('YEARLY') ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+                        <div className={`p-2 rounded-lg ${selectedPayments.includes('YEARLY') ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-600'}`}><HandCoins className="w-5 h-5" /></div>
+                        <div><p className={`text-xs font-bold uppercase ${selectedPayments.includes('YEARLY') ? 'text-emerald-700' : 'text-slate-500'}`}>Yıllık Aidat</p><p className="text-sm font-black text-slate-800">₺{stk.annualDuesAmount}</p></div>
+                      </button>
                     )}
                     {stk?.monthlyDuesAmount && (
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><HandCoins className="w-5 h-5" /></div>
-                        <div><p className="text-xs font-bold text-slate-500 uppercase">Aylık Aidat</p><p className="text-sm font-black text-slate-800">₺{stk.monthlyDuesAmount}</p></div>
-                      </div>
+                      <button type="button" onClick={() => togglePayment('MONTHLY')} className={`text-left p-3 rounded-xl border shadow-sm flex items-center gap-3 transition-all ${selectedPayments.includes('MONTHLY') ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                        <div className={`p-2 rounded-lg ${selectedPayments.includes('MONTHLY') ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'}`}><HandCoins className="w-5 h-5" /></div>
+                        <div><p className={`text-xs font-bold uppercase ${selectedPayments.includes('MONTHLY') ? 'text-blue-700' : 'text-slate-500'}`}>Aylık Aidat</p><p className="text-sm font-black text-slate-800">₺{stk.monthlyDuesAmount}</p></div>
+                      </button>
                     )}
+                    <button type="button" onClick={() => togglePayment('DONATION')} className={`sm:col-span-2 text-left p-3 rounded-xl border shadow-sm flex items-center gap-3 transition-all ${selectedPayments.includes('DONATION') ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-white border-slate-200 hover:border-amber-300'}`}>
+                      <div className={`p-2 rounded-lg ${selectedPayments.includes('DONATION') ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-600'}`}><HandCoins className="w-5 h-5" /></div>
+                      <div><p className={`text-xs font-bold uppercase ${selectedPayments.includes('DONATION') ? 'text-amber-700' : 'text-slate-500'}`}>Bağış Yapıyorum</p><p className="text-sm font-black text-slate-800">Gönüllü Bağış</p></div>
+                    </button>
                     {stk?.iban && (
                       <div className="sm:col-span-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-3">

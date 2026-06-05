@@ -3,35 +3,27 @@ import { Shield } from 'lucide-react'
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
+        <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* Navbar */}
-            <header className="border-b border-white/10 backdrop-blur-xl sticky top-0 z-50" style={{ background: 'rgba(15,23,42,0.9)' }}>
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
-                            <Shield className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white">Kamulog</h1>
-                            <p className="text-[10px] text-slate-400 -mt-0.5">Kamu Çalışanları Platformu</p>
-                        </div>
+                    <Link href="/" className="flex items-center gap-1.5">
+                        <span className="text-2xl font-black tracking-tighter text-slate-900 flex items-center">
+                            KamuLog<span className="text-emerald-600">STK</span>
+                        </span>
                     </Link>
-                    <nav className="flex items-center gap-4">
-                        <Link href="/kariyer" className="text-sm text-slate-300 hover:text-white transition">İş İlanları</Link>
-                        <Link href="/becayis-ilanlari" className="text-sm text-slate-300 hover:text-white transition">Becayiş</Link>
-                        <Link href="/tis-arsiv" className="text-sm text-slate-300 hover:text-white transition">TİS & Dosyalar</Link>
-                        <Link href="/login" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition">
-                            Giriş Yap
-                        </Link>
-                    </nav>
                 </div>
             </header>
 
-            {children}
+            <main className="flex-grow">
+                {children}
+            </main>
 
             {/* Footer */}
-            <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500">
-                © 2026 Kamulog — Kamu Çalışanları İçin Tek Platform
+            <footer className="bg-white border-t border-slate-200 py-8 text-center">
+                <p className="text-sm text-slate-500 font-medium">
+                    © {new Date().getFullYear()} KamuLog STK. Tüm hakları saklıdır.
+                </p>
             </footer>
         </div>
     )

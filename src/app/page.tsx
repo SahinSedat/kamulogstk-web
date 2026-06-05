@@ -570,8 +570,8 @@ export default function STKDirectoryPage() {
               <p className="text-sm text-slate-500 leading-relaxed font-medium mt-2">
                 Sivil Toplum Dünyasını Tek Platformda Keşfedin. Dernek, sendika ve vakıflar için yenilikçi yönetim ve üyelik çözümleri.
               </p>
-              <a href="mailto:destek@kamulogstk.net" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors mt-2 inline-flex items-center gap-2">
-                <Send className="w-4 h-4" /> destek@kamulogstk.net
+              <a href="mailto:iletisim@kamulogstk.net" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors mt-2 inline-flex items-center gap-2">
+                <Send className="w-4 h-4" /> iletisim@kamulogstk.net
               </a>
             </div>
 
@@ -582,7 +582,7 @@ export default function STKDirectoryPage() {
                 <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Ana Sayfa</Link></li>
                 <li><Link href="/kurumsal" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Kurumsal Çözümler</Link></li>
                 <li><Link href="#nasil-calisir" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Nasıl Çalışır?</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sıkça Sorulan Sorular (SSS)</Link></li>
+                <li><Link href="/sss" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sıkça Sorulan Sorular (SSS)</Link></li>
                 <li><Link href="/iletisim" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">İletişim</Link></li>
               </ul>
             </div>
@@ -591,11 +591,11 @@ export default function STKDirectoryPage() {
             <div>
               <h4 className="font-semibold text-slate-900 mb-6 tracking-wide">Çözümler</h4>
               <ul className="space-y-4">
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Dernek Yönetimi</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sendika Yönetimi</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Vakıf Yönetimi</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Aidat Takibi</Link></li>
-                <li><Link href="/" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Şeffaf İletişim</Link></li>
+                <li><Link href="/cozumler/dernek" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Dernek Yönetimi</Link></li>
+                <li><Link href="/cozumler/sendika" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Sendika Yönetimi</Link></li>
+                <li><Link href="/cozumler/vakif" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Vakıf Yönetimi</Link></li>
+                <li><Link href="/cozumler/aidat-takibi" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Aidat Takibi</Link></li>
+                <li><Link href="/cozumler/seffaf-iletisim" className="text-sm text-slate-500 hover:text-emerald-600 transition-colors font-medium">Şeffaf İletişim</Link></li>
               </ul>
             </div>
 

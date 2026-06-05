@@ -8,16 +8,23 @@ import path from "path";
 /**
  * Base64 imza verisini dosya olarak kaydet ve URL döndür
  */
-async function saveSignatureFile(base64Data: string, applicantName: string): Promise<string> {
+async function saveSignatureFile(base64Data: string, prefix: string): Promise<string> {
   try {
-    // "data:image/png;base64," prefix varsa çıkar
     let rawBase64 = base64Data;
+    let extension = "png"; // default
     if (rawBase64.includes(",")) {
-      rawBase64 = rawBase64.split(",")[1];
+      const parts = rawBase64.split(",");
+      const mimeStr = parts[0];
+      if (mimeStr.includes("pdf")) extension = "pdf";
+      else if (mimeStr.includes("jpeg") || mimeStr.includes("jpg")) extension = "jpg";
+      else if (mimeStr.includes("png")) extension = "png";
+      rawBase64 = parts[1];
     }
 
     const buffer = Buffer.from(rawBase64, "base64");
-    const filename = `imza_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+    // Replace spaces and special characters from prefix to make it a safe filename
+    const safePrefix = prefix.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 20);
+    const filename = `${safePrefix}_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads", "signatures");
 
     await mkdir(uploadDir, { recursive: true });
@@ -38,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   try {
     const { slug } = await params;
     const body = await req.json();
-    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl } = body;
+    const { name, tcKimlik, phone, email, userId, consentGiven, signatureType, signatureUrl, documentUrl, birthDate, contractUrl, receiptUrl, selectedPayments } = body;
 
     if (!name || !tcKimlik || !phone || !email || !birthDate) {
       return NextResponse.json(
@@ -125,7 +132,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         },
       });
 
-      if (savedReceiptUrl) {
+      if (savedReceiptUrl && selectedPayments && selectedPayments.length > 0) {
+        for (const pType of selectedPayments) {
+          let amount = 0;
+          let paymentTypeEnum = "DONATION";
+          if (pType === "MONTHLY") { paymentTypeEnum = "MONTHLY_DUES"; amount = stk.monthlyDuesAmount || 0; }
+          else if (pType === "YEARLY") { paymentTypeEnum = "YEARLY_DUES"; amount = stk.annualDuesAmount || 0; }
+          else { paymentTypeEnum = "DONATION"; }
+          
+          await prisma.sTKPaymentReport.create({
+            data: {
+              applicationId: application.id,
+              amount,
+              paymentType: paymentTypeEnum,
+              paymentDate: new Date(),
+              receiptUrl: savedReceiptUrl,
+              status: "PENDING"
+            }
+          });
+        }
+      } else if (savedReceiptUrl) {
         await prisma.sTKPaymentReport.create({
           data: {
             applicationId: application.id,
@@ -197,7 +223,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       },
     });
 
-    if (savedReceiptUrl2) {
+    if (savedReceiptUrl2 && selectedPayments && selectedPayments.length > 0) {
+      for (const pType of selectedPayments) {
+        let amount = 0;
+        let paymentTypeEnum = "DONATION";
+        if (pType === "MONTHLY") { paymentTypeEnum = "MONTHLY_DUES"; amount = stk.monthlyDuesAmount || 0; }
+        else if (pType === "YEARLY") { paymentTypeEnum = "YEARLY_DUES"; amount = stk.annualDuesAmount || 0; }
+        else { paymentTypeEnum = "DONATION"; }
+        
+        await prisma.sTKPaymentReport.create({
+          data: {
+            applicationId: application.id,
+            amount,
+            paymentType: paymentTypeEnum,
+            paymentDate: new Date(),
+            receiptUrl: savedReceiptUrl2,
+            status: "PENDING"
+          }
+        });
+      }
+    } else if (savedReceiptUrl2) {
       await prisma.sTKPaymentReport.create({
         data: {
           applicationId: application.id,
