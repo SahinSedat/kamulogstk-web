@@ -1,6 +1,7 @@
 import { createAdminNotification } from "@/lib/services/adminNotificationService";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendSTKPaymentReceivedNotification } from "@/lib/services/notificationService";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -72,6 +73,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     });
 
     console.log(`[STK Payment] 📩 Ödeme bildirimi → ${app.name} | ${amount} TL | ${paymentType || "MONTHLY"}`);
+
+    // Bildirim gönder
+    sendSTKPaymentReceivedNotification({
+      applicantName: app.name,
+      applicantEmail: app.email || "mail@yok.com",
+      applicantPhone: app.phone || "0",
+      stkName: stk.name,
+      stkId: stk.id,
+      userId: app.userId || undefined,
+    }).catch(e => console.error("[STK Payment Notify] Hata:", e));
 
     return NextResponse.json({
       success: true,

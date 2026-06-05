@@ -756,3 +756,72 @@ export async function sendSTKResignationNotification(params: {
         console.error(`[STK WhatsApp] ❌ İstifa mesajı hata:`, e);
     }
 }
+
+/**
+ * STK Aidat/Ödeme Bildirimi Alındı — E-posta + WhatsApp + In-App Push
+ */
+export async function sendSTKPaymentReceivedNotification(params: {
+    applicantName: string;
+    applicantEmail: string;
+    applicantPhone: string;
+    stkName: string;
+    userId?: string;
+    stkId?: string;
+}) {
+    if (params.userId) {
+        try {
+            await createNotification({
+                userId: params.userId,
+                title: "💰 Ödeme Bildiriminiz Alındı",
+                message: `${params.stkName} kuruluşuna yapmış olduğunuz aidat/bağış bildiriminiz alınmıştır.`,
+                type: "SYSTEM",
+                payload: { category: "stk_payment_received" },
+            });
+        } catch (e) {
+            console.error("[STK Push] hata:", e);
+        }
+    }
+
+    try {
+        const transporter = getTxTransporter();
+        await transporter.sendMail({
+            from: TX_FROM,
+            to: params.applicantEmail,
+            subject: `✅ Ödeme Bildiriminiz Alındı — ${params.stkName}`,
+            html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                    <div style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);padding:20px;border-radius:12px 12px 0 0;text-align:center;">
+                        <h1 style="color:#fff;margin:0;font-size:20px;">💰 Ödeme Bildirimi</h1>
+                    </div>
+                    <div style="background:#f9fafb;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+                        <p style="color:#374151;font-size:15px;line-height:1.6;">Merhaba <strong>${params.applicantName}</strong>,</p>
+                        <p style="color:#374151;font-size:15px;line-height:1.6;"><strong>${params.stkName}</strong> adına yapmış olduğunuz aidat/bağış bildiriminiz başarıyla alınmıştır. 🎉</p>
+                        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:16px 0;">
+                            <p style="color:#6b7280;font-size:13px;margin:0 0 8px;">📋 Bildirim Durumu</p>
+                            <p style="color:#F59E0B;font-size:16px;font-weight:bold;margin:0;">⏳ İnceleniyor</p>
+                        </div>
+                        <p style="color:#6b7280;font-size:13px;">Bildiriminiz kuruluş yetkilileri tarafından incelenmek üzere onaya gönderilmiştir.</p>
+                        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+                        <p style="color:#9ca3af;font-size:11px;text-align:center;">Bu e-posta Kamulog tarafından otomatik gönderilmiştir.<br><a href="https://kamulog.net" style="color:#0ea5e9;">kamulog.net</a></p>
+                    </div>
+                </div>
+            `,
+        });
+        console.log(`[STK Email] ✅ Ödeme bildirimi alındı maili → ${params.applicantEmail}`);
+    } catch (e) {
+        console.error(`[STK Email] ❌ Ödeme bildirimi maili hata:`, e);
+    }
+
+    try {
+        const message =
+            `💰 *Ödeme Bildirimi Alındı*\n\n` +
+            `Merhaba ${params.applicantName},\n` +
+            `*${params.stkName}* kuruluşuna yapmış olduğunuz aidat/bağış bildiriminiz başarıyla alınmıştır.\n\n` +
+            `Bildiriminiz kuruluş yetkilileri tarafından incelenmek üzere onaya gönderilmiştir. ⏳`;
+
+        await sendDynamicWaMessage(params.applicantPhone, message, params.stkId);
+        console.log(`[STK WhatsApp] ✅ Ödeme bildirimi alındı mesajı → ${params.applicantPhone}`);
+    } catch (e) {
+        console.error(`[STK WhatsApp] ❌ Ödeme bildirimi mesajı hata:`, e);
+    }
+}
