@@ -33,6 +33,9 @@ export default function STKApplicationPage() {
 
   const [copiedIban, setCopiedIban] = useState(false);
 
+  const [consentMembership, setConsentMembership] = useState(false);
+  const [consentKVKK, setConsentKVKK] = useState(false);
+  const [consentPrivacy, setConsentPrivacy] = useState(false);
   useEffect(() => {
     if (!slug) return;
     const fetchStk = async () => {
@@ -91,8 +94,18 @@ export default function STKApplicationPage() {
       return;
     }
 
+    if (formData.phone.length !== 11) {
+      setError("Cep telefonu numaranız 0 ile başlayacak şekilde 11 haneli olmalıdır.");
+      return;
+    }
+
     if (stk?.contractPdfUrl && !contractBase64) {
       setError("Lütfen ıslak imzalı üyelik sözleşmesini yükleyiniz.");
+      return;
+    }
+
+    if (!consentMembership || !consentKVKK || !consentPrivacy) {
+      setError("Başvurunuzu tamamlamak için lütfen onay kutularını işaretleyiniz.");
       return;
     }
 
@@ -199,7 +212,7 @@ export default function STKApplicationPage() {
                   </div>
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><ShieldCheck className="w-4 h-4 text-slate-400" /> T.C. Kimlik No <span className="text-red-500">*</span></label>
-                    <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
+                    <input type="text" maxLength={11} required value={formData.tcKimlik} onChange={e => setFormData({...formData, tcKimlik: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="11 haneli" />
                   </div>
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Calendar className="w-4 h-4 text-slate-400" /> Doğum Tarihi (GG.AA.YYYY) <span className="text-red-500">*</span></label>
@@ -207,7 +220,7 @@ export default function STKApplicationPage() {
                   </div>
                   <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Phone className="w-4 h-4 text-slate-400" /> Cep Telefonu <span className="text-red-500">*</span></label>
-                    <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium" placeholder="05XX XXX XX XX" />
+                    <input type="tel" maxLength={11} required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-medium font-mono" placeholder="05XX XXX XX XX" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="flex items-center gap-1.5 text-sm font-bold text-slate-700 mb-1.5"><Mail className="w-4 h-4 text-slate-400" /> E-posta Adresi <span className="text-red-500">*</span></label>
@@ -304,6 +317,47 @@ export default function STKApplicationPage() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="h-px bg-slate-200 w-full" />
+
+              {/* Onay Kutuları */}
+              <div className="space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                    <input type="checkbox" checked={consentMembership} onChange={(e) => setConsentMembership(e.target.checked)} className="peer sr-only" />
+                    <div className="w-5 h-5 rounded border-2 border-slate-300 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">
+                    Kuruluşun tarafıma sunmuş olduğu <strong>Üyelik Sözleşmesi</strong>'ni okudum, anladım ve kabul ediyorum.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                    <input type="checkbox" checked={consentKVKK} onChange={(e) => setConsentKVKK(e.target.checked)} className="peer sr-only" />
+                    <div className="w-5 h-5 rounded border-2 border-slate-300 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">
+                    <Link href="/kvkk" target="_blank" className="text-emerald-600 hover:underline">KVKK Aydınlatma Metni</Link>'ni okudum ve kişisel verilerimin işlenmesini onaylıyorum.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                    <input type="checkbox" checked={consentPrivacy} onChange={(e) => setConsentPrivacy(e.target.checked)} className="peer sr-only" />
+                    <div className="w-5 h-5 rounded border-2 border-slate-300 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">
+                    <Link href="/gizlilik-politikasi" target="_blank" className="text-emerald-600 hover:underline">Gizlilik Sözleşmesi</Link>'ni okudum ve kabul ediyorum.
+                  </span>
+                </label>
               </div>
 
               {/* Submit */}
