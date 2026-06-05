@@ -28,6 +28,7 @@ export default function STKApplicationPage() {
   const [isOnlyPayment, setIsOnlyPayment] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [membershipNotFound, setMembershipNotFound] = useState(false);
 
   const [receiptNumber, setReceiptNumber] = useState("");
   const [contractFile, setContractFile] = useState<File | null>(null);
@@ -167,7 +168,11 @@ export default function STKApplicationPage() {
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        setError(data.error || "Başvuru sırasında bir hata oluştu.");
+        if (data.error && data.error.includes("Sistemde Telefon numaranızla veya E-posta adresinizle eşleşen bir üyelik kaydı bulunamadı")) {
+          setMembershipNotFound(true);
+        } else {
+          setError(data.error || "Başvuru sırasında bir hata oluştu.");
+        }
       }
     } catch (err) {
       setError("Sistemsel bir hata oluştu. Lütfen tekrar deneyin.");
@@ -244,6 +249,27 @@ export default function STKApplicationPage() {
               <button 
                 onClick={() => setShowErrorDialog(false)}
                 className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-red-500/30"
+              >
+                Anladım, Düzeltiyorum
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Üyelik Bulunamadı Dialog Modalı */}
+        {membershipNotFound && (
+          <div className="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-red-100 transform transition-all scale-100 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <ShieldCheck className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-4">Kayıt Bulunamadı</h3>
+              <p className="text-slate-600 mb-6 font-medium text-sm leading-relaxed">
+                Sistemde Telefon numaranızla veya E-posta adresinizle eşleşen bir üyelik kaydı bulunamadı. Lütfen "Sadece Aidat Ödeyeceğim" seçeneğini kaldırarak tam başvuru yapınız.
+              </p>
+              <button 
+                onClick={() => setMembershipNotFound(false)}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-all shadow-lg"
               >
                 Anladım, Düzeltiyorum
               </button>
