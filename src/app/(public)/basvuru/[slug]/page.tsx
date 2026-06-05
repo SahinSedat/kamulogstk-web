@@ -32,6 +32,7 @@ export default function STKApplicationPage() {
   
   const [duesStatus, setDuesStatus] = useState<{message: string; dueDate: string | null; name: string} | null>(null);
   const [checkingDues, setCheckingDues] = useState(false);
+  const [wantsToPayDues, setWantsToPayDues] = useState(false);
 
   const [receiptNumber, setReceiptNumber] = useState("");
   const [contractFile, setContractFile] = useState<File | null>(null);
@@ -97,6 +98,30 @@ export default function STKApplicationPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleCheckDues = async () => {
+    if (!formData.tcKimlik || formData.tcKimlik.length !== 11) {
+      setError("Aidat durumu sorgulamak için lütfen 11 haneli T.C. Kimlik numaranızı giriniz.");
+      return;
+    }
+    
+    setCheckingDues(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/public/stk/${slug}/check-dues?tcKimlik=${formData.tcKimlik}`);
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setDuesStatus({ message: data.message, dueDate: data.dueDate, name: data.name });
+      } else {
+        setError(data.error || "Aidat durumu sorgulanırken bir hata oluştu.");
+      }
+    } catch (e) {
+      setError("Sistemsel bir hata oluştu.");
+    } finally {
+      setCheckingDues(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -130,12 +155,14 @@ export default function STKApplicationPage() {
       if (!consentMembership || !consentKVKK || !consentPrivacy) {
         errors.push("Başvurunuzu tamamlamak için lütfen onay kutularını işaretleyiniz.");
       }
-    } else {
+    }
+
+    if (isOnlyPayment || wantsToPayDues) {
       if (selectedPayments.length === 0) {
-        errors.push("Sadece aidat ödemesi yapıyorsanız en az bir ödeme tipi (Aylık, Yıllık, Bağış) seçmelisiniz.");
+        errors.push("Aidat ödemesi yapıyorsanız en az bir ödeme tipi (Aylık, Yıllık, Bağış) seçmelisiniz.");
       }
       if (!receiptBase64) {
-        errors.push("Sadece aidat ödemesi yapıyorsanız ödeme dekontunuzu yüklemelisiniz.");
+        errors.push("Aidat ödemesi yapıyorsanız ödeme dekontunuzu yüklemelisiniz.");
       }
     }
 
@@ -418,14 +445,30 @@ export default function STKApplicationPage() {
 
               <div className="h-px bg-slate-200 w-full" />
 
-              {/* Aidat Dekontu (Opsiyonel) */}
-              <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <HandCoins className="w-5 h-5 text-emerald-500" /> 3. Aidat ve Dekont Bildirimi (Opsiyonel)
-                </h3>
-                
-                {(stk?.annualDuesAmount || stk?.monthlyDuesAmount || stk?.iban) && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {!isOnlyPayment && (
+                <div className="bg-emerald-50 border-2 border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <HandCoins className="w-5 h-5 text-emerald-500" /> Üyelik Başvurumla Birlikte Aidat/Bağış Ödemek İstiyorum
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-1">Başvurunuzla eş zamanlı olarak aidatınızı veya bağışınızı ödeyebilirsiniz (İsteğe Bağlı).</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input type="checkbox" checked={wantsToPayDues} onChange={(e) => setWantsToPayDues(e.target.checked)} className="sr-only peer" />
+                    <div className="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                  </label>
+                </div>
+              )}
+
+              {/* Aidat Dekontu */}
+              {(isOnlyPayment || wantsToPayDues) && (
+                <div className="animate-fade-in mt-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <HandCoins className="w-5 h-5 text-emerald-500" /> 3. Aidat ve Dekont Bildirimi
+                  </h3>
+                  
+                  {(stk?.annualDuesAmount || stk?.monthlyDuesAmount || stk?.iban) && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {stk?.annualDuesAmount && (
                       <button type="button" onClick={() => togglePayment('YEARLY')} className={`text-left p-3 rounded-xl border shadow-sm flex items-center gap-3 transition-all ${selectedPayments.includes('YEARLY') ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
                         <div className={`p-2 rounded-lg ${selectedPayments.includes('YEARLY') ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-600'}`}><HandCoins className="w-5 h-5" /></div>
