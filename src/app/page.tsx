@@ -96,53 +96,103 @@ export default function STKDirectoryPage() {
               }
             }}
           >
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
             <input
               type="text"
               placeholder="Dernek, sendika veya vakıf arayın..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-16 pl-16 pr-28 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
+              className="w-full h-16 pl-6 pr-32 rounded-2xl bg-white border-2 border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg font-medium transition-all"
             />
-            <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] transition-colors shadow-sm">
-              Ara
+            <button type="submit" className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-[#059669] text-white font-bold hover:bg-[#047857] transition-colors shadow-sm flex items-center gap-2">
+              <Search className="w-5 h-5" /> Ara
             </button>
           </form>
         </div>
       </div>
 
-      {/* Feature Cards - Biz Kimiz? */}
-      <div id="nasil-calisir" className="max-w-6xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-5 shadow-sm">
-              <Zap className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-3">Kolay Üyelik Süreci</h3>
-            <p className="text-slate-500 font-medium leading-relaxed">
-              Evrak işleriyle uğraşmayın. Seçtiğiniz kuruluşa dijital ortamda anında başvuru yapın ve sürecinizi takip edin.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-5 shadow-sm">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-3">Güvenli Aidat Takibi</h3>
-            <p className="text-slate-500 font-medium leading-relaxed">
-              Ödemelerinizi IBAN bilgileriyle güvenle yapın, makbuzlarınızı sisteme yükleyip onay durumunu anlık görün.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center mb-5 shadow-sm">
-              <Users className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-3">Şeffaf İletişim</h3>
-            <p className="text-slate-500 font-medium leading-relaxed">
-              Kuruluşun WhatsApp gruplarına, sosyal medya hesaplarına ve tüzüğüne tek tıkla, şeffaf bir şekilde erişin.
-            </p>
+      {/* Main Content - Directory */}
+      <main className="max-w-4xl mx-auto px-4 pb-24 pt-16">
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#1e293b]">Kayıtlı Kuruluşlar</h2>
+            <p className="text-slate-500 mt-1 font-medium">{stks.length} aktif sivil toplum kuruluşu bulundu</p>
           </div>
         </div>
-      </div>
+
+        {/* List */}
+        {loading ? (
+          <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-4 border-[#059669]"></div></div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {stks.map(stk => (
+              <div key={stk.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1">
+                <div className="flex flex-col md:flex-row md:items-start gap-6">
+                  {/* Logo */}
+                  {stk.logo ? (
+                    <img src={stk.logo} alt={stk.name} className="w-20 h-20 rounded-2xl object-cover border border-slate-100 shadow-sm shrink-0" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                      <Building className="w-10 h-10 text-slate-300" />
+                    </div>
+                  )}
+                  
+                  {/* Info */}
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-slate-800 leading-tight mb-3 pr-4">{stk.name}</h2>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-extrabold tracking-wide ${getStkTypeColor(stk.type)}`}>
+                        {stk.type}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-500">
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                        {stk.city}
+                      </span>
+                      {stk.registrationNumber && (
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-slate-400">
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          Sicil: {stk.registrationNumber}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[15px] text-slate-600 line-clamp-2 leading-relaxed mb-5">
+                      {stk.description}
+                    </p>
+                    
+                    {/* Bottom Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                      <div className="inline-flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                          <HandCoins className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aidat Tutarı</span>
+                          <span className="text-sm font-bold text-slate-700">
+                            {stk.monthlyDuesAmount ? `Aylık ₺${stk.monthlyDuesAmount}` : (stk.annualDuesAmount ? `Yıllık ₺${stk.annualDuesAmount}` : "Ücretsiz")}
+                          </span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedStk(stk)}
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm transition-all hover:bg-slate-800 shadow-md shadow-slate-900/10"
+                      >
+                        Detayları İncele <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {stks.length === 0 && (
+              <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100">
+                <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-slate-700 mb-2">Kuruluş Bulunamadı</h3>
+                <p className="text-slate-500">Arama kriterlerinize uygun sivil toplum kuruluşu bulunamadı.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
 
       {/* --- YENİ BÖLÜMLER --- */}
 
@@ -290,89 +340,38 @@ export default function STKDirectoryPage() {
         </div>
       </div>
 
-      {/* Main Content - Directory */}
-      <main className="max-w-4xl mx-auto px-4 pb-24 pt-16">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
-          <div>
-            <h2 className="text-3xl font-extrabold text-[#1e293b]">Kayıtlı Kuruluşlar</h2>
-            <p className="text-slate-500 mt-1 font-medium">{stks.length} aktif sivil toplum kuruluşu bulundu</p>
+      {/* Feature Cards - Biz Kimiz? */}
+      <div id="nasil-calisir" className="max-w-6xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-5 shadow-sm">
+              <Zap className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Kolay Üyelik Süreci</h3>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              Evrak işleriyle uğraşmayın. Seçtiğiniz kuruluşa dijital ortamda anında başvuru yapın ve sürecinizi takip edin.
+            </p>
+          </div>
+          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-5 shadow-sm">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Güvenli Aidat Takibi</h3>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              Ödemelerinizi IBAN bilgileriyle güvenle yapın, makbuzlarınızı sisteme yükleyip onay durumunu anlık görün.
+            </p>
+          </div>
+          <div className="bg-white p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center mb-5 shadow-sm">
+              <Users className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Şeffaf İletişim</h3>
+            <p className="text-slate-500 font-medium leading-relaxed">
+              Kuruluşun WhatsApp gruplarına, sosyal medya hesaplarına ve tüzüğüne tek tıkla, şeffaf bir şekilde erişin.
+            </p>
           </div>
         </div>
-
-        {/* List */}
-        {loading ? (
-          <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-4 border-[#059669]"></div></div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {stks.map(stk => (
-              <div key={stk.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1">
-                <div className="flex flex-col md:flex-row md:items-start gap-6">
-                  {/* Logo */}
-                  {stk.logo ? (
-                    <img src={stk.logo} alt={stk.name} className="w-20 h-20 rounded-2xl object-cover border border-slate-100 shadow-sm shrink-0" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-                      <Building className="w-10 h-10 text-slate-300" />
-                    </div>
-                  )}
-                  
-                  {/* Info */}
-                  <div className="flex-1">
-                    <h2 className="text-xl font-bold text-slate-800 leading-tight mb-3 pr-4">{stk.name}</h2>
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className={`px-3 py-1 rounded-lg text-xs font-extrabold tracking-wide ${getStkTypeColor(stk.type)}`}>
-                        {stk.type}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-500">
-                        <MapPin className="w-4 h-4 text-slate-400" />
-                        {stk.city}
-                      </span>
-                      {stk.registrationNumber && (
-                        <span className="flex items-center gap-1.5 text-sm font-medium text-slate-400">
-                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          Sicil: {stk.registrationNumber}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[15px] text-slate-600 line-clamp-2 leading-relaxed mb-5">
-                      {stk.description}
-                    </p>
-                    
-                    {/* Bottom Actions */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-100">
-                      <div className="inline-flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
-                          <HandCoins className="w-4 h-4" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aidat Tutarı</span>
-                          <span className="text-sm font-bold text-slate-700">
-                            {stk.monthlyDuesAmount ? `Aylık ₺${stk.monthlyDuesAmount}` : (stk.annualDuesAmount ? `Yıllık ₺${stk.annualDuesAmount}` : "Ücretsiz")}
-                          </span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setSelectedStk(stk)}
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm transition-all hover:bg-slate-800 shadow-md shadow-slate-900/10"
-                      >
-                        Detayları İncele <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {stks.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100">
-                <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-700 mb-2">Kuruluş Bulunamadı</h3>
-                <p className="text-slate-500">Arama kriterlerinize uygun sivil toplum kuruluşu bulunamadı.</p>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+      </div>
 
       {/* Detail Modal */}
       <Dialog.Root open={!!selectedStk} onOpenChange={(open) => !open && setSelectedStk(null)}>
