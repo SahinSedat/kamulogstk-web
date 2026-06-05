@@ -485,6 +485,77 @@ export default function STKDirectoryPage() {
         </Dialog.Portal>
       </Dialog.Root>
 
+      {/* Mobil Uygulama Tanıtım Bölümü */}
+      <section className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-slate-900 py-24 mt-16 relative overflow-hidden">
+        {/* Dekoratif arka plan öğeleri */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+          <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[70%] rounded-full bg-emerald-500/20 blur-[120px]"></div>
+          <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[70%] rounded-full bg-blue-500/20 blur-[120px]"></div>
+          {/* Geometrik Desen */}
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Metin İçeriği */}
+            <div className="text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-sm mb-6 border border-emerald-500/30">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                Mobil Uygulamamız Yayında!
+              </span>
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
+                Kamulog STK Cebinizde! <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500">Tüm İşlemler Tek Tıkla.</span>
+              </h2>
+              <p className="text-slate-300 text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
+                Uygulamamızı indirerek üye olduğunuz dernek veya sendikanın duyurularını anlık bildirim olarak alabilir, evraklarınızı yükleyebilir, şubelerinizi görebilir ve üye sohbet odalarına katılabilirsiniz. Her şey çok daha hızlı ve güvenli.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <button className="flex items-center gap-3 px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all w-full sm:w-auto backdrop-blur-md group">
+                  <div className="text-white group-hover:scale-110 transition-transform">
+                    <svg viewBox="0 0 384 512" className="w-8 h-8 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[10px] text-slate-300 font-medium uppercase tracking-wider">Download on the</div>
+                    <div className="text-white font-bold text-lg leading-none">App Store</div>
+                  </div>
+                </button>
+                <button className="flex items-center gap-3 px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all w-full sm:w-auto backdrop-blur-md group">
+                  <div className="text-white group-hover:scale-110 transition-transform">
+                    <svg viewBox="0 0 512 512" className="w-8 h-8 fill-current"><path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/></svg>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[10px] text-slate-300 font-medium uppercase tracking-wider">GET IT ON</div>
+                    <div className="text-white font-bold text-lg leading-none">Google Play</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Mockup Görselleri */}
+            <div className="relative h-[400px] sm:h-[550px] w-full mt-12 lg:mt-0">
+              <div className="absolute right-[5%] sm:right-[15%] lg:right-0 inset-y-0 w-full max-w-[500px]">
+                {/* Arka plan cihaz / 1. Ekran (Menü) */}
+                <div className="absolute right-[35%] sm:right-[40%] top-10 sm:top-16 w-[180px] sm:w-[240px] h-[380px] sm:h-[500px] transform -rotate-6 z-10 transition-transform hover:-rotate-2 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-slate-800 shadow-2xl bg-slate-900 overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-5 sm:h-6 bg-slate-800 w-1/2 mx-auto rounded-b-xl z-20"></div>
+                  <img src="/images/app1.png" alt="Kamulog App Menu" className="w-full h-full object-cover object-top opacity-90 hover:opacity-100 transition-opacity" />
+                </div>
+                
+                {/* Ön plan cihaz / 2. Ekran (Detay) */}
+                <div className="absolute right-0 sm:right-[10%] top-0 w-[200px] sm:w-[260px] h-[420px] sm:h-[550px] transform rotate-3 z-20 transition-transform hover:rotate-1 duration-500 rounded-[2rem] sm:rounded-[2.5rem] border-[4px] sm:border-[6px] border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-slate-900 overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-5 sm:h-7 bg-slate-800 w-1/2 mx-auto rounded-b-xl z-20"></div>
+                  <img src="/images/app2.png" alt="Kamulog App Detail" className="w-full h-full object-cover object-top" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8 mt-12">
         <div className="max-w-6xl mx-auto px-4">
