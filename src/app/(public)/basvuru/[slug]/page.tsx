@@ -514,7 +514,8 @@ export default function STKApplicationPage() {
                     </div>
                   )}
                 </div>
-              </div>
+                </div>
+              )}
 
               <div className="h-px bg-slate-200 w-full" />
 
